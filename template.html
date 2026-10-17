@@ -51,6 +51,7 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .at{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:-4px}
 .at i{width:12px;height:12px;border-radius:2px;background:var(--amber);opacity:.5;flex:none}
 .at b{font-family:var(--f-head);font-size:17px;font-weight:600;color:var(--ink)}
+.doubt{margin:-4px 0 0;font-size:14px;color:var(--muted);max-width:60ch}
 /* cambios del pronóstico */
 .chg ul{list-style:none;margin:6px 0 0;padding:0}
 .chg li{padding:7px 0;border-top:1px solid var(--grid);font-size:14px}
@@ -177,7 +178,7 @@ const SPOTS = {
     tideNote:"Baja a media subiendo.",
     links:[["Wisuki","https://es.wisuki.com/forecast/6652/puertecillo"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/litueche/puertecillo-1807"],["Swellnet","https://www.swellnet.com/forecasts/chile/o-higgins/puertecillo"],["Breakfinder","https://breakfinder.surf/en/surf_spots/puertecillo"],["Surf-forecast","https://www.surf-forecast.com/breaks/Puertecillo/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/puertecillo/5842041f4e65fad6a7708cc0"]]},
   top:{name:"Topocalma",face:320,k:1.0,lo:1.3,hi:3.5,min:0.8,max:5.0,tidePref:0.3,orient:"NO (Piedra del Viento) a N (El Secreto)",subs:"Punta · Piedra del Viento · El Secreto",
-    style:"La que recibe más tamaño. Pesada sobre roca; con S, El Secreto es el más protegido.",
+    style:"La que recibe más tamaño. Pesada sobre roca; con S, El Secreto es el más protegido. Tiene menos fuentes de ola que los otros dos: su pronóstico es menos firme.",
     tideNote:"Media a alta; en baja se pone peligrosa.",
     links:[["Lineup · Piedra del Viento","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/piedra-del-viento-11050"],["Lineup · El Secreto","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/el-secreto-11051"],["Windguru","https://www.windguru.cz/42514"],["Surf-forecast","https://www.surf-forecast.com/breaks/Punta-Topocalma/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/punta-topocalma/640a4d5c4519054c85a024bd"]]}
 };
@@ -336,6 +337,22 @@ function changes(d,from){
   return rows.length?`<div class="chg"><div class="k">Cambios en el pronóstico para ${when}</div><ul>${rows.join("")}</ul></div>`
     :`<p class="aside chg0">Pronóstico estable: sin cambios en las últimas ${span}.</p>`}
 
+/* ——— duda: solo habla si el nivel podría ser otro o hay pocas fuentes ——— */
+function scoreWith(k,a,f,src){const cur=DATA.spots[k],S=Object.assign({},cur,{[f]:cur[src]||cur[f]});
+  return withSpot(k,S,()=>(hourly(k,a.best.a.i).score+hourly(k,a.best.b.i).score)/2)}
+const LV=["no pasa","igual sale","bueno","épico","épico"],LCUT=[2.5,4.5,6.5,8.3];
+function doubt(k,a){if(!a) return "";const lvl3=v=>Math.min(3,lvl(v)),x=a.best.a,L=lvl3(a.score),q=n=>`“${LV[n]}”`,out=[];
+  // una variable a la vez (ola o viento) hacia la fuente más baja y la más alta; habla solo si cruza un nivel con margen
+  const sc=[scoreWith(k,a,"sh","shLo"),scoreWith(k,a,"sh","shHi"),scoreWith(k,a,"ws","wsHi"),scoreWith(k,a,"ws","wsLo")];
+  const mn=Math.min(...sc),mx=Math.max(...sc),M=.3;
+  const Lp=L>0&&mn<LCUT[L-1]-M?lvl3(mn):L,Lo=L<3&&mx>=LCUT[L]+M?lvl3(mx):L;
+  if(Lp<L&&Lo>L) out.push(`Según la fuente, va de ${q(Lp)} a ${q(Lo)}.`);
+  else if(Lo>L) out.push(`Según la fuente, podría quedar en ${q(Lo)}.`);
+  else if(Lp<L) out.push(`Según la fuente, podría quedar en ${q(Lp)}.`);
+  if(x.nW<2) out.push(`Solo 1 fuente de ola: tómalo con cautela.`);
+  else if(x.nV<3) out.push(`Solo ${x.nV} ${x.nV===1?"fuente":"fuentes"} de viento: tómalo con cautela.`);
+  return out.length?`<p class="doubt">${out.join(" ")}</p>`:""}
+
 /* ——— 1 · decidir ——— */
 let verdictDay=curDay, verdictKey=null;
 function renderVerdict(){
@@ -351,11 +368,12 @@ function renderVerdict(){
   document.getElementById("verdict").innerHTML=`
     <span class="status ${st[1]}">${st[0]}</span>
     <h2 class="line">${line}</h2>
+    ${doubt(b.key,b)}
     ${L>=1?camBtn(b.key):""}
     <div class="facts">${metrics(x,b.key,[sp!=null?hhmm(sp):"no",sp!=null?"se ensucia":"se ensucia en el día"])}</div>
     <p class="aside" style="margin-top:-4px">Peak de la ola a las <b>${hhmm(b.peak.i%24)}</b>.</p>
     <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)} (${Math.round(x.teff)} s), ${tideTrend(b.key,x.i)}. ${(()=>{const bd=board(x,b.key);return `Lleva ${bd[0]}: ${bd[1]}.`})()}${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
-    <p class="aside">Confianza <b>${cf[0]}</b>.${better}</p>
+    ${better?`<p class="aside">${better.trim()}</p>`:""}
     ${changes(d,d===curDay?hNow+.5:0)}`;
 }
 
@@ -470,6 +488,7 @@ function renderDay(){
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${P.name}</h3><span class="lvl l${lvl(a.score)}">${lvlName(a.score)}</span></div>
     ${d===curDay?camBtn(mainK):""}
     <p class="sum">${sum}${passed}</p>
+    ${!TREND(d)?doubt(mainK,a):""}
     ${chart(mainK,d)}${legend}
     <ol class="tramos">${segments(mainK,d).map(sg=>`<li class="${sg.start<a.best.end&&sg.end>a.best.start?"win":""}"><span class="h">${hhmm(sg.start)}–${hhmm(sg.end)}</span><span class="lvl l${sg.L}">${lvlName(sg.xs.reduce((m,x)=>Math.max(m,x.score),0))}</span><span>${sg.txt}</span></li>`).join("")}</ol>
     ${trio(mainK,a)}
