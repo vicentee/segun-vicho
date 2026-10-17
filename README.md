@@ -1,4 +1,4 @@
-# Según Vicho
+# Según Miapá
 
 Reporte de surf para **Matanzas, Puertecillo y Topocalma** (Chile central). Dice adónde ir, a qué hora y qué esperar, con la mediana de varias fuentes en vez de confiar en una sola.
 
