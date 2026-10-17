@@ -51,6 +51,7 @@ HEAD = """<!doctype html>
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<script data-goatcounter="https://segunvicho.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 """
 

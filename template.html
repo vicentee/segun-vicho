@@ -297,7 +297,7 @@ function pwMeter(kw,w=100){const max=60,X=v=>Math.min(v,max)/max*w;let g="",x=0;
   const mx=X(kw);g+=`<path d="M${mx-3.5} 0 L${mx+3.5} 0 L${mx} 4.5 Z" fill="var(--ink)"/>`;
   return `<svg class="pwm" viewBox="0 0 ${w} 11" width="${w}" height="11" aria-hidden="true">${g}</svg>`}
 const perShort=t=>t<9?"corto":t<12?"normal":t<15?"espaciado":"largo";
-const camBtn=k=>{const c=SPOTS[k].cam;return c?`<a class="cam" href="${c.url}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1" y="4" width="10" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 7 L15 5 L15 11 L11 9 Z" fill="currentColor"/></svg>Ver cámara<small>${c.by} · ${c.note}</small></a>`:""};
+const camBtn=k=>{const c=SPOTS[k].cam;return c?`<a class="cam" data-k="${k}" href="${c.url}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1" y="4" width="10" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 7 L15 5 L15 11 L11 9 Z" fill="currentColor"/></svg>Ver cámara<small>${c.by} · ${c.note}</small></a>`:""};
 function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
   return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
     <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
@@ -558,4 +558,21 @@ function renderWhy(){setTimeout(bindSrows,0);
 renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
 document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00, o cuando Vicente cambia algo en el diseño de este reporte.`;
+
+/* ——— uso: eventos anónimos a GoatCounter (solo en la página pública; sin cookies) ——— */
+(()=>{const q=[],send=(p,t)=>{const g=window.goatcounter;if(g&&g.count){g.count({path:p,title:t||p,event:true});return true}return false};
+  const ev=(p,t)=>{if(!send(p,t))q.push([p,t])};
+  const flush=()=>{while(q.length&&send(...q[0]))q.shift()};[1500,4000,9000].forEach(ms=>setTimeout(flush,ms));
+  const once=new Set(),evOnce=(p,t)=>{if(!once.has(p)){once.add(p);ev(p,t)}};
+  const rel=d=>d===curDay?"hoy":d===curDay+1?"manana":"d+"+(d-curDay);
+  if(matchMedia("(display-mode: standalone)").matches||navigator.standalone) ev("app-instalada","Abierta desde la app instalada");
+  document.addEventListener("click",e=>{const c=e.target.closest(".cell");if(c){ev(`semana-${c.dataset.k}-${rel(+c.dataset.d)}`,`Semana: ${SPOTS[c.dataset.k].name}, ${rel(+c.dataset.d)}`);return}
+    const a=e.target.closest("a.cam");if(a){ev(`camara-${a.dataset.k}`,`Ver cámara: ${SPOTS[a.dataset.k].name}`);return}
+    const l=e.target.closest(".links a");if(l) ev(`fuente-${l.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-")}`,`Link a fuente: ${l.textContent.trim()}`)});
+  document.addEventListener("toggle",e=>{const d=e.target;if(!d.open) return;
+    if(d.classList.contains("why")) ev("por-que","Abrió Por qué esta recomendación");
+    else if(d.classList.contains("more")) ev("claves","Abrió Claves del spot");
+    else if(d.closest(".others")){const n=d.querySelector("summary strong");ev(`otro-spot-${(n?n.textContent:"").toLowerCase()}`,`Abrió otro spot: ${n?n.textContent:""}`)}},true);
+  document.addEventListener("pointerdown",e=>{if(e.target.closest(".chart")) evOnce("grafico","Usó el gráfico");else if(e.target.closest(".srow")) evOnce("fuentes","Tocó el gráfico de fuentes")},true);
+})();
 </script>
