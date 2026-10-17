@@ -116,7 +116,7 @@ details.more p{margin:8px 0 0;font-size:13.5px;max-width:62ch}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);padding-top:12px}
 </style>
 <div class="wrap">
-  <header><h1 class="logo"><svg viewBox="0 0 140 56" width="140" height="56" role="img" aria-label="Según Vicho"><defs><linearGradient id="lgf" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".18" stop-color="#fff"/><stop offset=".82" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="lmf" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="56"><rect width="140" height="56" fill="url(#lgf)"/></mask></defs><circle cx="128" cy="12" r="4.5" fill="var(--sol)"/><path d="M14.00 42.00 L16.10 38.85 L20.30 36.75 L23.45 37.27 L25.55 33.60 L30.80 31.50 L32.90 28.35 L39.20 27.30 L42.35 24.15 L48.65 23.10 L53.90 21.00 L60.20 21.52 L64.40 19.95 L69.65 21.00 L72.80 23.10 L74.90 25.20 L75.95 31.50 L78.05 35.70 L80.15 34.65 L81.20 29.40 L82.25 21.00 L83.30 14.70 L85.40 9.45 L88.55 6.82 L91.70 7.35 L93.80 10.50 L94.85 16.80 L96.95 25.20 L99.05 33.60 L102.20 38.85 L106.40 42.00 Z" fill="var(--ink)" stroke="var(--ink)" stroke-width=".8" stroke-linejoin="round"/><g mask="url(#lmf)" fill="none" stroke="var(--blue)" stroke-linecap="round"><line x1="2" y1="42.8" x2="138" y2="42.8" stroke-width="1.6"/><line x1="16" y1="49" x2="72" y2="49" stroke-width="2.4" opacity=".6"/><line x1="58" y1="54" x2="118" y2="54" stroke-width="2.4" opacity=".32"/></g></svg></h1><div class="hd"><div class="t">Reporte de surf</div><div class="sub">Matanzas · Puertecillo · Topocalma</div><div class="meta" id="meta"></div></div></header>
+  <header><h1 class="logo"><svg viewBox="0 0 140 56" width="140" height="56" role="img" aria-label="Según Vicho"><defs><linearGradient id="lgf" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".18" stop-color="#fff"/><stop offset=".82" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="lmf" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="56"><rect width="140" height="56" fill="url(#lgf)"/></mask></defs><circle cx="128" cy="12" r="4.5" fill="var(--sol)"/><path d="M14.00 42.00 L16.10 38.85 L20.30 36.75 L23.45 37.27 L25.55 33.60 L30.80 31.50 L32.90 28.35 L39.20 27.30 L42.35 24.15 L48.65 23.10 L53.90 21.00 L60.20 21.52 L64.40 19.95 L69.65 21.00 L72.80 23.10 L74.90 25.20 L75.95 31.50 L78.05 35.70 L80.15 34.65 L81.20 29.40 L82.25 23.62 L83.83 18.38 L85.92 14.70 L89.08 12.81 L92.23 13.44 L94.33 16.27 L95.90 21.00 L98.00 27.30 L100.10 33.60 L103.25 38.85 L107.45 42.00 Z" fill="var(--ink)" stroke="var(--ink)" stroke-width=".8" stroke-linejoin="round"/><g mask="url(#lmf)" fill="none" stroke="var(--blue)" stroke-linecap="round"><line x1="2" y1="42.8" x2="138" y2="42.8" stroke-width="1.6"/><line x1="16" y1="49" x2="72" y2="49" stroke-width="2.4" opacity=".6"/><line x1="58" y1="54" x2="118" y2="54" stroke-width="2.4" opacity=".32"/></g></svg></h1><div class="hd"><div class="t">Reporte de surf</div><div class="sub">Matanzas · Puertecillo · Topocalma</div><div class="meta" id="meta"></div></div></header>
   <div id="stale" class="warn" hidden></div>
   <section class="verdict" id="verdict" aria-live="polite"></section>
   <section>
@@ -196,12 +196,15 @@ const lvl=s=>s<2.5?0:s<4.5?1:s<6.5?2:s<8.3?3:4;
 const lvlWord=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
 function confidence(x){const rel=(x.hi-x.lo)/Math.max(x.sh,.3),wsr=x.wsHi-x.wsLo;
   return rel<.28&&wsr<9?["alta","las fuentes coinciden"]:rel<.5&&wsr<15?["media","las fuentes difieren algo"]:["baja","las fuentes no se ponen de acuerdo"]}
-function board(x,key){ // según tamaño en la rompiente, potencia y qué tan limpio está
+function board(x,key){ // [tabla, por qué] según tamaño en la rompiente, potencia y qué tan limpio está
   const f=x.face,clean=windQ(x.wd,key)>=.85||x.ws<6,soft=x.kw<14;
-  if(f<.6) return "el longboard";
-  if(f<.9) return key==="pue"&&clean?"el longboard":clean?"una tabla corta con pan":"una tabla de espuma media";
-  if(f<1.3) return soft||!clean?"una tabla corta con pan":"una tabla corta de performance";
-  return "una tabla corta de performance";
+  if(f<.6) return ["el longboard","ola chica, necesitas remada y deslizamiento"];
+  if(f<.9){
+    if(key==="pue"&&clean) return ["el longboard","paredes largas y suaves para planear"];
+    return clean?["una tabla gruesa","poca fuerza, el volumen te mete en la ola"]:["una tabla de espuma media","chico y desordenado, es estable y perdona"];
+  }
+  if(f<1.3&&(soft||!clean)) return ["una tabla gruesa",soft?"ola sin fuerza, más volumen para entrar temprano":"con viento, más estabilidad en el chop"];
+  return ["un shortboard","tamaño y fuerza para maniobrar en la pared"];
 }
 function tidesOn(key,d){return DATA.spots[key].tides.map(t=>({day:Math.floor(t.m/1440),h:(t.m%1440)/60,ht:t.h,type:t.type})).filter(t=>t.day===d)}
 
@@ -264,7 +267,7 @@ function renderVerdict(){
     <h2 class="line">${line}</h2>
     <div class="facts">${metrics(x,b.key,[sp!=null?hhmm(sp):"no",sp!=null?"se ensucia":"se ensucia en el día"])}</div>
     <p class="aside" style="margin-top:-4px">Peak de la ola a las <b>${hhmm(b.peak.i%24)}</b>.</p>
-    <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)} (${Math.round(x.teff)} s), ${tideTrend(b.key,x.i)}. Lleva ${board(x,b.key)}.${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
+    <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)} (${Math.round(x.teff)} s), ${tideTrend(b.key,x.i)}. ${(()=>{const bd=board(x,b.key);return `Lleva ${bd[0]}: ${bd[1]}.`})()}${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
     <p class="aside">Confianza <b>${cf[0]}</b>.${better}</p>`;
 }
 
@@ -345,7 +348,7 @@ function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if
   c.addEventListener("pointermove",chartMove);c.addEventListener("pointerdown",chartMove);c.addEventListener("pointerleave",chartLeave)})}
 const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>terral</span><span><i style="background:var(--base)"></i>cruzado</span><span><i style="background:var(--maral)"></i>maral</span><span>flechas: hacia dónde van el swell (azul, arriba) y el viento</span></div>`;
 function trio(k,a){const x=a.best.a;
-  return `<div class="facts">${metrics(x,k,[`${hhmm(a.best.start)}–${hhmm(a.best.end)}`,"ventana"])}</div><p class="aside">Lleva ${board(x,k)}.</p>`}
+  return `<div class="facts">${metrics(x,k,[`${hhmm(a.best.start)}–${hhmm(a.best.end)}`,"ventana"])}</div><p class="aside">${(()=>{const bd=board(x,k);return `Lleva <b>${bd[0].replace(/^(el|una|un) /,"")}</b>: ${bd[1]}.`})()}</p>`}
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";

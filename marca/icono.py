@@ -17,10 +17,11 @@ TOKENS = {
     "espuma": "#F4F1E6", "sol": "#F0913A", "tinta": "#0D1B26",
 }
 
-# silueta de la roca en unidades propias: 88 de ancho, base en y = 40; bloque anguloso, muesca y aguja hasta y = 6,5
+# silueta de la roca en unidades propias: 89 de ancho, base en y = 40; bloque hasta y = 19, aguja hasta y = 12 (1,4 veces el bloque)
 ROCK = [(0, 40), (2, 37), (6, 35), (9, 35.5), (11, 32), (16, 30), (18, 27), (24, 26), (27, 23), (33, 22),
         (38, 20), (44, 20.5), (48, 19), (53, 20), (56, 22), (58, 24), (59, 30), (61, 34), (63, 33), (64, 28),
-        (65, 20), (66, 14), (68, 9), (71, 6.5), (74, 7), (76, 10), (77, 16), (79, 24), (81, 32), (84, 37), (88, 40)]
+        (65, 22.5), (66.5, 17.5), (68.5, 14), (71.5, 12.2), (74.5, 12.8), (76.5, 15.5), (78, 20), (80, 26),
+        (82, 32), (85, 37), (89, 40)]
 
 
 def rock_path(scale, ox, base_y):
@@ -38,7 +39,7 @@ def icon(level=3, theme="mar", rounded=True):
     bg = T["tinta"] if mono else T["oceano"]
     rr = 14 if rounded else 0
     scale = {1: 0.68, 2: 0.66, 3: 0.64}[level]
-    width = 88 * scale
+    width = 89 * scale
     ox, base = (64 - width) / 2, {1: 44, 2: 41, 3: 41}[level]
     out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">',
            f'<defs><clipPath id="t"><rect width="64" height="64" rx="{rr}"/></clipPath></defs>',
