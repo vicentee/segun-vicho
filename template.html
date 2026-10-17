@@ -47,6 +47,10 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .nowp{transform-box:fill-box;transform-origin:center;opacity:0}
 @media (prefers-reduced-motion:no-preference){.nowp{animation:ping 1.8s ease-out infinite}}
 @keyframes ping{0%{transform:scale(1);opacity:.45}100%{transform:scale(2.8);opacity:0}}
+/* bloque de métricas de la ventana: la hora como título, con el ámbar de "ventana" */
+.at{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:-4px}
+.at i{width:12px;height:12px;border-radius:2px;background:var(--amber);opacity:.5;flex:none}
+.at b{font-family:var(--f-head);font-size:17px;font-weight:600;color:var(--ink)}
 /* cambios del pronóstico */
 .chg ul{list-style:none;margin:6px 0 0;padding:0}
 .chg li{padding:7px 0;border-top:1px solid var(--grid);font-size:14px}
@@ -447,8 +451,8 @@ function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if
   c.addEventListener("pointerleave",e=>{if(!c.hasPointerCapture||!c.hasPointerCapture(e.pointerId))chartLeave(e)});
   c.addEventListener("dragstart",e=>e.preventDefault());c.addEventListener("selectstart",e=>e.preventDefault())})}
 const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>offshore</span><span><i style="background:var(--base)"></i>cross-shore</span><span><i style="background:var(--maral)"></i>onshore</span><span>flechas: hacia dónde van el swell (azul, arriba) y el viento</span></div>`;
-function trio(k,a){const x=a.best.a;
-  return `<div class="facts">${metrics(x,k,[`${hhmm(a.best.start)}–${hhmm(a.best.end)}`,"ventana"])}</div><p class="aside">${(()=>{const bd=board(x,k);return `Lleva <b>${bd[0].replace(/^(el|una|un) /,"")}</b>: ${bd[1]}.`})()}</p>`}
+function trio(k,a){const x=a.best.a,d=Math.floor(x.i/24),sp=spoilAt(k,d,a.best.end);
+  return `<div class="at"><i></i>En la ventana <b>${hhmm(a.best.start)}–${hhmm(a.best.end)}</b></div><div class="facts at-f">${metrics(x,k,[sp!=null?hhmm(sp):"no",sp!=null?"se ensucia":"se ensucia en el día"])}</div><p class="aside">${(()=>{const bd=board(x,k);return `Lleva <b>${bd[0].replace(/^(el|una|un) /,"")}</b>: ${bd[1]}.`})()}</p>`}
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
