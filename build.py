@@ -15,6 +15,9 @@ Método por hora y variable:
   3. Límite = max(min(2,5·MAD, tope%·mediana), piso absoluto, piso%·mediana). Descarta lo que se aleja más que eso.
      Altura: piso 0,25 m / 22 %, tope 40 %. Período: piso 2,5 s, tope 30 %. Viento: piso 6 km/h / 30 %, tope 50 %.
   4. Mediana de lo que queda (si quedan ≥ 2). Direcciones: media circular de lo que queda a ≤ 45° (oleaje) / 60° (viento).
+
+Historial: antes de escribir, lee el index.html anterior y guarda en DATA.hist las corridas de las últimas 30 h
+(una cada ≥ 2 h, 72 horas de datos por spot) para que la página muestre cómo cambió el pronóstico.
 """
 import json, sys, time, math, statistics, urllib.request, datetime
 
@@ -233,10 +236,50 @@ def build(web):
     return out
 
 
+# ——— historial: corridas anteriores para mostrar si el pronóstico mejoró o empeoró ———
+HIST_FIELDS = ["sh", "sp", "sd", "h2", "p2", "d2", "ws", "wd", "ww", "tide"]
+HIST_HOURS = 72     # cubre hoy y mañana aunque la corrida anterior sea del día previo
+HIST_KEEP_H = 30    # guarda corridas de hasta 30 h atrás (alcanza para comparar con hace 24 h)
+
+
+def read_data(path):
+    """DATA embebido en un index.html ya construido, o None."""
+    try:
+        html = open(path).read()
+        i = html.index("const DATA = ") + len("const DATA = ")
+        return json.JSONDecoder().raw_decode(html[i:])[0]
+    except Exception:
+        return None
+
+
+def snapshot(d):
+    return {"t": d["generated_utc"], "start": d["start"],
+            "spots": {k: {f: s[f][:HIST_HOURS] for f in HIST_FIELDS} for k, s in d["spots"].items()}}
+
+
+def history(prev, now_utc):
+    if not prev:
+        return []
+    runs = {h["t"]: h for h in prev.get("hist", [])}
+    if "start" in prev:
+        runs[prev["generated_utc"]] = snapshot(prev)
+    t0 = datetime.datetime.strptime(now_utc, "%Y-%m-%dT%H:%MZ")
+    keep = [h for t, h in runs.items()
+            if t != now_utc and 0 < (t0 - datetime.datetime.strptime(t, "%Y-%m-%dT%H:%MZ")).total_seconds() <= HIST_KEEP_H * 3600]
+    # una corrida cada ≥ 2 h basta (los push manuales generan corridas muy seguidas)
+    out, last = [], None
+    for h in sorted(keep, key=lambda h: h["t"], reverse=True):
+        t = datetime.datetime.strptime(h["t"], "%Y-%m-%dT%H:%MZ")
+        if last is None or (last - t).total_seconds() >= 2 * 3600:
+            out.append(h); last = t
+    return out[::-1]
+
+
 if __name__ == "__main__":
     tpl, webp, outp = sys.argv[1:4]
     web = json.load(open(webp)) if webp != "-" else {}
     data = build(web)
+    data["hist"] = history(read_data(outp), data["generated_utc"])
     html = open(tpl).read().replace("__DATA__", json.dumps(data, separators=(",", ":"), ensure_ascii=False))
     if outp.endswith("index.html"):  # página pública: documento completo con íconos y manifest
         html = HEAD + html + "\n</html>\n"
