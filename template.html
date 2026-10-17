@@ -62,7 +62,11 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .tramos .lvl{justify-self:start}
 .aside{font-size:14px;margin:0;color:var(--muted)} .aside b{color:var(--ink)}
 /* 2 · semana */
-.mx table{border-collapse:separate;border-spacing:2px;width:100%;table-layout:fixed}
+.mx{overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)))}
+.mx table{border-collapse:separate;border-spacing:2px;width:100%;min-width:560px;table-layout:fixed}
+.mx th.trend-h{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding-left:4px;border-left:1px dashed var(--base)}
+.mx th.d.tr{color:var(--base)} .mx th.d.tr b{color:var(--muted)}
+.cell.tr{opacity:.5;background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(127,127,127,.12) 5px 6px)}
 .mx th{font-weight:500;font-size:11.5px;color:var(--muted);text-align:center;padding:0 0 3px}
 .mx th.d b{display:block;font-family:var(--f-head);font-size:16px;color:var(--ink);font-weight:600}
 .mx th.s{text-align:left;font-family:var(--f-head);font-size:13px;color:var(--ink);font-weight:600;width:70px}
@@ -205,7 +209,9 @@ function analyse(key,d,from=0){
 }
 const lvl=s=>s<2.5?0:s<4.5?1:s<6.5?2:s<8.3?3:4;
 const lvlWord=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
+const TREND=d=>d>=curDay+7;  // días 8 a 10: pocas fuentes, solo tendencia
 function confidence(x){const rel=(x.hi-x.lo)/Math.max(x.sh,.3),wsr=x.wsHi-x.wsLo;
+  if(x.nW<3||x.nV<3) return ["baja","quedan pocas fuentes a esta distancia"];
   return rel<.28&&wsr<9?["alta","las fuentes coinciden"]:rel<.5&&wsr<15?["media","las fuentes difieren algo"]:["baja","las fuentes no se ponen de acuerdo"]}
 function board(x,key){ // [tabla, por qué] según tamaño en la rompiente, potencia y qué tan limpio está
   const f=x.face,clean=windQ(x.wd,key)>=.85||x.ws<6,soft=x.kw<14;
@@ -287,7 +293,7 @@ function renderVerdict(){
   const x=b.best.a,L=lvl(b.score),P=SPOTS[b.key],sz=sizeWord(x.face),sp=spoilAt(b.key,d,b.best.end),cf=confidence(x);
   const st=[["No pasa","st-no"],["Igual sale","st-maybe"],["Bueno","st-maybe"],["Épico","st-go"],["Épico","st-go"]][L];
   const line=L>=1?`${when}: ${P.name}, ${hhmm(b.best.start)}–${hhmm(b.best.end)}.`:`${when}: no pasa.`;
-  let wk=null;for(let dd=curDay;dd<ND;dd++){const z=bestOf(dd);if(!wk||z.score>wk.score)wk=z}
+  let wk=null;for(let dd=curDay;dd<Math.min(ND,curDay+7);dd++){const z=bestOf(dd);if(!wk||z.score>wk.score)wk=z}
   const better=wk&&wk.d!==d&&lvl(wk.score)>L?` El mejor día de la semana es el <b>${dLong(wk.d)} ${dNum(wk.d)}</b> en ${SPOTS[wk.key].name}.`:"";
   document.getElementById("verdict").innerHTML=`
     <span class="status ${st[1]}">${st[0]}</span>
@@ -302,11 +308,12 @@ function renderVerdict(){
 let selDay=curDay, selKey=null;
 function renderMatrix(){
   const days=[];for(let d=curDay;d<ND;d++)days.push(d);
-  let h=`<table><thead><tr><th class="s"></th>${days.map(d=>`<th class="d">${dName(d)}<b>${dNum(d)}</b></th>`).join("")}</tr></thead><tbody>`;
+  const nT=days.filter(TREND).length;
+  let h=`<table><thead>${nT?`<tr><th></th><th colspan="${days.length-nT}"></th><th colspan="${nT}" class="trend-h">tendencia</th></tr>`:""}<tr><th class="s"></th>${days.map(d=>`<th class="d${TREND(d)?" tr":""}">${dName(d)}<b>${dNum(d)}</b></th>`).join("")}</tr></thead><tbody>`;
   KEYS.forEach(k=>{h+=`<tr><th class="s" scope="row">${SPOTS[k].name}</th>`+days.map(d=>{const a=ANA[d][k],b=bestOf(d),best=b.key===k&&lvl(a.score)>=1,sel=d===selDay&&k===(selKey||b.key);
-    return `<td><button class="cell l${lvl(a.score)}${best?" best":""}${sel?" sel":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}, ${a.score.toFixed(1)}, a las ${hhmm(a.best.start)}"><b>${a.score.toFixed(1)}</b><small>${hhmm(a.best.start).slice(0,2)}h</small><small>${fm(a.best.a.face)} m</small></button></td>`}).join("")+`</tr>`});
+    return `<td><button class="cell l${lvl(a.score)}${best&&!TREND(d)?" best":""}${sel?" sel":""}${TREND(d)?" tr":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}${TREND(d)?" (tendencia)":`, ${a.score.toFixed(1)}, a las ${hhmm(a.best.start)}`}"><b>${a.score.toFixed(1)}</b>${TREND(d)?"":`<small>${hhmm(a.best.start).slice(0,2)}h</small>`}<small>${fm(a.best.a.face)} m</small></button></td>`}).join("")+`</tr>`});
   document.getElementById("mx").innerHTML=h+`</tbody></table>`;
-  document.querySelectorAll(".cell").forEach(c=>c.onclick=()=>{selDay=+c.dataset.d;selKey=c.dataset.k;renderMatrix();renderDay();document.getElementById("day").scrollIntoView({behavior:"smooth",block:"start"})});
+  document.querySelectorAll(".cell").forEach(c=>c.onclick=()=>{selDay=+c.dataset.d;selKey=c.dataset.k;renderMatrix();renderDay()});
 }
 
 /* ——— 3 · detalle ——— */
@@ -389,7 +396,8 @@ function renderDay(){
   const d=selDay,mainK=selKey||bestOf(d).key,a=ANA[d][mainK],P=SPOTS[mainK],x=a.best.a,sp=spoilAt(mainK,d,a.best.end);
   const sum=lvl(a.score)>=1?`${mr(x.face)}, mar ${cleanWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
   const others=KEYS.filter(k=>k!==mainK).sort((p,q)=>ANA[d][q].score-ANA[d][p].score);
-  document.getElementById("day").innerHTML=`
+  const trendNote=TREND(d)?`<p class="warn" style="margin:0">Tendencia: a esta distancia quedan 1–2 modelos de ola y 3–4 de viento. Sirve para ver si viene swell y de qué tamaño, no para elegir la hora.</p>`:"";
+  document.getElementById("day").innerHTML=trendNote+`
     <div class="k">${dLong(d)} ${dNum(d)}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${P.name}</h3><span class="lvl l${lvl(a.score)}">${lvlName(a.score)}</span></div>
     <p class="sum">${sum}</p>

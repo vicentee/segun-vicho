@@ -19,7 +19,7 @@ Método por hora y variable:
 import json, sys, time, math, statistics, urllib.request, datetime
 
 SPOTS = {"mat": (-33.96, -71.89), "pue": (-34.09, -71.97), "top": (-34.13, -72.01)}
-DAYS = 7
+DAYS = 10  # días 8 a 10 se muestran como tendencia (quedan pocos modelos)
 TZ = "America/Santiago"
 # best_match se excluye: en esta costa devuelve exactamente Météo-France y votaría dos veces.
 # ecmwf_wam025 se excluye: no tiene celdas de mar en este tramo de costa.
