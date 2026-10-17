@@ -268,10 +268,11 @@ function pwMeter(kw,w=100){const max=60,X=v=>Math.min(v,max)/max*w;let g="",x=0;
   PW.forEach(b=>{const x2=X(Math.min(b.to,max));if(x2>x){g+=`<rect x="${x+.5}" y="5" width="${Math.max(0,x2-x-1)}" height="5" rx="1" fill="${b.c}" opacity="${b===pwBand(kw)?1:.35}"/>`;x=x2}});
   const mx=X(kw);g+=`<path d="M${mx-3.5} 0 L${mx+3.5} 0 L${mx} 4.5 Z" fill="var(--ink)"/>`;
   return `<svg class="pwm" viewBox="0 0 ${w} 11" width="${w}" height="11" aria-hidden="true">${g}</svg>`}
+const perShort=t=>t<9?"corto":t<12?"normal":t<15?"espaciado":"largo";
 function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
   return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
     <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
-    <div><b>${Math.round(x.teff)} s</b><span>período</span></div>
+    <div><b>${Math.round(x.teff)} s</b><span>período · ${perShort(x.teff)}</span></div>
     <div><b>${Math.round(x.kw)} kW/m</b>${pwMeter(x.kw)}<span>potencia ${pwBand(x.kw).w}</span></div>
     <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>
     ${extra?`<div><b>${extra[0]}</b><span>${extra[1]}</span></div>`:""}`}
@@ -355,7 +356,7 @@ function tipHTML(k,i){const x=hourly(k,i),ww=windWord(x.ws,x.wd,k),S=DATA.spots[
   return `<div class="tip-h"><b>${hhmm(i%24)}</b><span class="lvl l${lvl(x.score)}">${lvlName(x.score)}</span></div>
   <dl><dt>Swell</dt><dd>${sarrow(x.sd)}${fm(x.sh)} m · del ${es16(x.sd)}</dd>
   <dt>Rompiente</dt><dd>${mr(x.face)}</dd>
-  <dt>Período</dt><dd>${Math.round(x.teff)} s</dd>
+  <dt>Período</dt><dd>${Math.round(x.teff)} s · ${perShort(x.teff)}</dd>
   <dt>Potencia</dt><dd>${Math.round(x.kw)} kW/m · ${pwBand(x.kw).w}</dd>
   <dt>Viento</dt><dd>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h ${es16(x.wd)}<br><span class="wtag ${ww[1]}">${ww[0]}</span> · rachas ${Math.round(x.wg??x.ws)}</dd>
   <dt>Marea</dt><dd>${S.tide[i]!=null?(S.tide[i]>0?"+":"")+S.tide[i].toFixed(2).replace(".",",")+" m":"–"}${tr?" · "+tr.replace("marea ",""):""}</dd>
