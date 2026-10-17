@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Cuatro capas: decidir (veredicto) → planificar (semana) → detalle (solo el spot elegido) → verificar (cerrado). Azul = dato, gris = referencia, ámbar = acción, rojo apagado = maral. */
+/* Cuatro capas: decidir (veredicto) → planificar (semana) → detalle (solo el spot elegido) → verificar (cerrado). Azul = dato, gris = referencia, ámbar = acción, rojo apagado = onshore. */
 :root{
   --bg:#FFFFFF; --panel:#F4F6F8; --ink:#0D1B26; --muted:#5E6B75; --grid:#E2E7EB; --base:#9AA6AF;
   --blue:#1D4ED8; --blue2:#93B4F5; --amber:#F5B700; --amberInk:#3A2B00; --maral:#C2533A; --ok:#0F7B5A;
@@ -182,8 +182,8 @@ const fm=m=>m==null?"–":m.toFixed(1).replace(".",",");
 /* ——— vocabulario local del viento ——— */
 function windQ(dir,key){const off=(SPOTS[key].face+180)%360;const dl=Math.abs((((dir-off)%360)+540)%360-180);
   return dl<35?1:dl<70?.85:dl<100?.6:dl<135?.35:.15}
-function windWord(s,dir,key){if(s<6) return ["calmo","w-good"];const q=windQ(dir,key);
-  return q>=.95?["terral","w-good"]:q>=.85?["cruzado-terral","w-good"]:q>=.6?["cruzado","w-mid"]:q>=.3?["cruzado-maral","w-bad"]:["maral","w-bad"]}
+function windWord(s,dir,key){if(s<6) return ["glassy","w-good"];const q=windQ(dir,key);
+  return q>=.95?["offshore","w-good"]:q>=.85?["cross-offshore","w-good"]:q>=.6?["cross-shore","w-mid"]:q>=.3?["cross-onshore","w-bad"]:["onshore","w-bad"]}
 function swellDirQ(d){return d>=215&&d<250?1:d>=250&&d<265?.9:d>=190&&d<215?.8:d>=265&&d<290?.65:.4}
 function secValid(S,i){return S.h2[i]!=null&&S.p2[i]>=12&&S.d2[i]>=190&&S.d2[i]<=290&&S.h2[i]>=.3}
 
@@ -245,7 +245,7 @@ if(Date.now()-Date.parse(DATA.generated_utc)>12*36e5||nowIdx>NH-30){const s=docu
 /* ——— vocabulario de playa ——— */
 const sizeWord=f=>f<.5?["chico","a la rodilla"]:f<.8?["medio metro","a la cintura"]:f<1.15?["un metro","al pecho"]:f<1.6?["metro y medio","a la cabeza"]:f<2.2?["dos metros","sobre la cabeza"]:["grande","de doble para arriba"];
 const cap=t=>t[0].toUpperCase()+t.slice(1);
-const cleanWord=x=>{const w=windWord(x.ws,x.wd,x.key)[0];return ["calmo","terral","cruzado-terral"].includes(w)?"limpio":w==="cruzado"?"con textura":"desordenado"};
+const cleanWord=x=>{const w=windWord(x.ws,x.wd,x.key)[0];return ["glassy","offshore","cross-offshore"].includes(w)?"limpio":w==="cross-shore"?"con textura":"desordenado"};
 const lvlName=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
 const mr=f=>`${fm(f*.85)}–${fm(f*1.15)} m`;
 const periodWord=t=>t<10?"olas seguidas y cortas":t<13?"series normales":"series espaciadas y con fuerza";
@@ -377,7 +377,7 @@ function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if
   c.addEventListener("pointermove",chartMove);c.addEventListener("pointerdown",grab(chartMove));c.addEventListener("pointerup",release(chartLeave));
   c.addEventListener("pointerleave",e=>{if(!c.hasPointerCapture||!c.hasPointerCapture(e.pointerId))chartLeave(e)});
   c.addEventListener("dragstart",e=>e.preventDefault());c.addEventListener("selectstart",e=>e.preventDefault())})}
-const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>terral</span><span><i style="background:var(--base)"></i>cruzado</span><span><i style="background:var(--maral)"></i>maral</span><span>flechas: hacia dónde van el swell (azul, arriba) y el viento</span></div>`;
+const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>offshore</span><span><i style="background:var(--base)"></i>cross-shore</span><span><i style="background:var(--maral)"></i>onshore</span><span>flechas: hacia dónde van el swell (azul, arriba) y el viento</span></div>`;
 function trio(k,a){const x=a.best.a;
   return `<div class="facts">${metrics(x,k,[`${hhmm(a.best.start)}–${hhmm(a.best.end)}`,"ventana"])}</div><p class="aside">${(()=>{const bd=board(x,k);return `Lleva <b>${bd[0].replace(/^(el|una|un) /,"")}</b>: ${bd[1]}.`})()}</p>`}
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
@@ -452,7 +452,7 @@ function renderWhy(){setTimeout(bindSrows,0);
     ${spread(k,d)}
     ${srcLine(k,d)}
     <p><b>Método.</b> Cada hora junta todos los modelos y sitios, descarta los valores que se alejan demasiado del resto (más de 2,5 MAD, con tope de 40% en altura, 30% en período y 50% en viento) y recomienda con la <b>mediana</b> de lo que queda.</p>
-    <p><b>Puntaje.</b> Tamaño estimado en la rompiente (swell × factor del spot × período) contra el rango ideal de cada punta, período, dirección del swell, viento según la orientación de cada punta, mar de viento y marea. "Se ensucia" es la primera hora después de la ventana con viento maral de 12 km/h o más, o cualquier viento sobre 22 km/h.</p>
+    <p><b>Puntaje.</b> Tamaño estimado en la rompiente (swell × factor del spot × período) contra el rango ideal de cada punta, período, dirección del swell, viento según la orientación de cada punta, mar de viento y marea. "Se ensucia" es la primera hora después de la ventana con viento onshore de 12 km/h o más, o cualquier viento sobre 22 km/h.</p>
     <p><b>Fuentes.</b> Oleaje: ${(M.wave||[]).join(", ")}. Viento: ${(M.wind||[]).join(", ")}. Sitios: ${web.join(", ")||"ninguno legible en esta corrida"}.${(M.failed||[]).length?` Sin respuesta: ${M.failed.join(", ")}.`:""}</p>`;
 }
 
