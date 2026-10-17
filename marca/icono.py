@@ -1,65 +1,76 @@
 #!/usr/bin/env python3
-"""Sistema del ícono de Según Vicho.
+"""Sistema del ícono de Según Vicho: la roca de Matanzas.
 
-Una sola regla genera todos los tamaños: la punta de Puertecillo (un promontorio con pinos que entra al mar)
-y las líneas de ola que la rodean al doblar la punta, como una izquierda larga. A menor tamaño, menos detalle:
+La silueta de la roca (un bloque bajo e irregular que sube hacia la derecha, una muesca y la aguja vertical)
+es la base de todo. Una sola regla genera los tamaños; a menor tamaño, menos detalle:
 
-  nivel 1 (≤ 20 px)   promontorio + 2 olas gruesas
-  nivel 2 (≤ 48 px)   + 3 olas + sol
-  nivel 3 (> 48 px)   + 4 olas + pinos y roca en la punta + playa
+  nivel 1 (≤ 20 px)   roca + línea de agua
+  nivel 2 (≤ 48 px)   + línea de ola
+  nivel 3 (> 48 px)   + sol
 
-Grilla de 64 × 64 unidades, esquinas de 14 unidades. Uso:  python3 marca/icono.py  (escribe los SVG en marca/)
+Uso:  python3 marca/icono.py   (escribe los SVG en marca/ y el logo del encabezado en marca/logo.svg)
 """
 import pathlib
 
-TOKENS = {  # paleta: océano y pino del club, arena y sol de la playa
-    "oceano": "#0F3B45", "oceano_noche": "#0A1F26", "pino": "#5E8A55", "pino_sombra": "#3F6B40",
-    "ola": "#F4F1E6", "arena": "#E3D3AE", "sol": "#F0913A", "tinta": "#0D1B26",
+TOKENS = {
+    "oceano": "#123A47", "oceano_noche": "#0A1F26", "granito": "#ECE6D8", "agua": "#7FAEC2",
+    "espuma": "#F4F1E6", "sol": "#F0913A", "tinta": "#0D1B26",
 }
+
+# silueta de la roca en unidades propias: 88 de ancho, base en y = 40; bloque anguloso, muesca y aguja hasta y = 6,5
+ROCK = [(0, 40), (2, 37), (6, 35), (9, 35.5), (11, 32), (16, 30), (18, 27), (24, 26), (27, 23), (33, 22),
+        (38, 20), (44, 20.5), (48, 19), (53, 20), (56, 22), (58, 24), (59, 30), (61, 34), (63, 33), (64, 28),
+        (65, 20), (66, 14), (68, 9), (71, 6.5), (74, 7), (76, 10), (77, 16), (79, 24), (81, 32), (84, 37), (88, 40)]
+
+
+def rock_path(scale, ox, base_y):
+    pts = [(ox + x * scale, base_y - (40 - y) * scale) for x, y in ROCK]
+    return "M" + " L".join(f"{x:.2f} {y:.2f}" for x, y in pts) + " Z"
 
 
 def icon(level=3, theme="mar", rounded=True):
-    """theme: mar (fondo océano) · noche (fondo oscuro) · mono (una tinta, para máscaras)."""
+    """theme: mar · noche · mono (una tinta, para máscaras)."""
     T = dict(TOKENS)
     if theme == "noche":
         T["oceano"] = T["oceano_noche"]
     mono = theme == "mono"
+    c = lambda k: "#FFFFFF" if mono else T[k]
     bg = T["tinta"] if mono else T["oceano"]
-    fg = lambda k: "#FFFFFF" if mono else T[k]
-    stroke = {1: 5.0, 2: 3.6, 3: 3.0}[level]
     rr = 14 if rounded else 0
-    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">',
+    scale = {1: 0.68, 2: 0.66, 3: 0.64}[level]
+    width = 88 * scale
+    ox, base = (64 - width) / 2, {1: 44, 2: 41, 3: 41}[level]
+    out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">',
            f'<defs><clipPath id="t"><rect width="64" height="64" rx="{rr}"/></clipPath></defs>',
            f'<g clip-path="url(#t)"><rect width="64" height="64" fill="{bg}"/>']
-    # arena: franja curva abajo a la izquierda (la playa larga de Puertecillo)
     if level >= 3:
-        out.append(f'<path d="M-2 47 Q14 50 28 66 L-2 66 Z" fill="{fg("arena")}" opacity="{0.9 if not mono else 0.35}"/>')
-    # olas: líneas largas y paralelas que nacen en la punta y corren hacia la derecha, como una izquierda que pelea
-    # la ola de adentro es la más blanca (espuma); las de afuera se apagan hacia mar adentro
-    sets = {1: [0, 2], 2: [0, 1, 2], 3: [0, 1, 2, 3]}[level]
-    gap = {1: 10.5, 2: 8.5, 3: 7.6}[level]
-    for j, i in enumerate(sets):
-        sx, sy = 21 + i * 1.5, 34 + i * gap          # nace pegada a la punta y se aleja
-        ex, ey = 68, 30 + i * gap * 1.08             # sale por el borde derecho, levemente más alta
-        cx, cy = 40, 27 + i * gap                     # curva convexa: la ola dobla la punta
-        op = 1 - j * (0.18 if level >= 2 else 0.3)
-        out.append(f'<path d="M{sx:.1f} {sy:.1f} Q{cx:.1f} {cy:.1f} {ex:.1f} {ey:.1f}" fill="none" stroke="{fg("ola")}" '
-                   f'stroke-width="{stroke}" stroke-linecap="round" opacity="{op:.2f}"/>')
-    # promontorio: cresta alta a la izquierda que baja hasta la punta rocosa
-    land = "M-2 6 L6 6 Q14 5 18 12 Q21 18 24 26 Q25.5 30 22 31.5 Q14 34 6 36 L-2 38 Z"
-    out.append(f'<path d="{land}" fill="{fg("pino")}"/>')
-    if not mono:  # ladera en sombra hacia el mar
-        out.append('<path d="M18 12 Q21 18 24 26 Q25.5 30 22 31.5 Q19 26 16 18 Z" fill="%s"/>' % T["pino_sombra"])
-    if level >= 3:  # roca en la punta y pinos en la cresta
-        out.append(f'<path d="M21 31 Q25 29.5 27 31.5 Q25 33.5 21.5 33 Z" fill="{fg("pino_sombra") if not mono else "#FFFFFF"}"/>')
-        for x, h, y in [(4, 5.5, 7.2), (8.5, 6.5, 7.0), (13, 5.8, 7.6)]:
-            out.append(f'<path d="M{x-2.6:.1f} {y} L{x:.1f} {y-h:.1f} L{x+2.6:.1f} {y} Z" fill="{fg("pino")}"/>')
-    # sol: acento naranjo arriba a la derecha (la estrella del escudo, simplificada)
+        out.append(f'<circle cx="17" cy="17" r="4.4" fill="{c("sol")}"/>')
+    out.append(f'<path d="{rock_path(scale, ox, base)}" fill="{c("granito")}" stroke="{c("granito")}" stroke-width=".6" stroke-linejoin="round"/>')
+    # línea de agua: el mar que corta la base de la roca
+    lw = {1: 3.2, 2: 2.2, 3: 2.0}[level]
+    out.append(f'<line x1="{ox - 6:.1f}" y1="{base + lw / 2:.1f}" x2="{ox + width + 6:.1f}" y2="{base + lw / 2:.1f}" stroke="{c("agua")}" stroke-width="{lw}" stroke-linecap="round"/>')
+    # espuma: trazos rectos y desplazados, como la reventazón delante de la roca
     if level >= 2:
-        r = 5.2 if level == 2 else 4.6
-        out.append(f'<circle cx="49" cy="15" r="{r}" fill="{fg("sol")}"/>')
+        y = base + 9
+        out.append(f'<line x1="12" y1="{y}" x2="{38 if level == 3 else 50}" y2="{y}" stroke="{c("espuma")}" stroke-width="{3.2 if level == 2 else 2.8}" stroke-linecap="round"/>')
+        if level >= 3:
+            out.append(f'<line x1="30" y1="{y + 6}" x2="52" y2="{y + 6}" stroke="{c("espuma")}" stroke-width="2.8" stroke-linecap="round" opacity=".6"/>')
     out.append("</g></svg>")
     return "".join(out)
+
+
+def logo():
+    """Logo del encabezado: sin recuadro, colores tomados del tema de la página (roca en tinta, mar en azul)."""
+    return ('<svg viewBox="0 0 140 56" width="140" height="56" role="img" aria-label="Según Vicho">'
+            '<defs><linearGradient id="lgf" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/>'
+            '<stop offset=".18" stop-color="#fff"/><stop offset=".82" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'
+            '<mask id="lmf" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="56"><rect width="140" height="56" fill="url(#lgf)"/></mask></defs>'
+            '<circle cx="128" cy="12" r="4.5" fill="var(--sol)"/>'
+            f'<path d="{rock_path(1.05, 14, 42)}" fill="var(--ink)" stroke="var(--ink)" stroke-width=".8" stroke-linejoin="round"/>'
+            '<g mask="url(#lmf)" fill="none" stroke="var(--blue)" stroke-linecap="round">'
+            '<line x1="2" y1="42.8" x2="138" y2="42.8" stroke-width="1.6"/>'
+            '<line x1="16" y1="49" x2="72" y2="49" stroke-width="2.4" opacity=".6"/>'
+            '<line x1="58" y1="54" x2="118" y2="54" stroke-width="2.4" opacity=".32"/></g></svg>')
 
 
 if __name__ == "__main__":
@@ -68,4 +79,5 @@ if __name__ == "__main__":
                      "icono-noche.svg": dict(level=3, theme="noche"), "icono-mono.svg": dict(level=3, theme="mono"),
                      "icono-maskable.svg": dict(level=3, rounded=False)}.items():
         (d / name).write_text(icon(**kw))
+    (d / "logo.svg").write_text(logo())
     print("SVG listos en", d)
