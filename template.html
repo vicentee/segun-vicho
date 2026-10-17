@@ -74,11 +74,20 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 @media (max-width:440px){.facts b{font-size:17px}}
 .facts span{font-size:12px;color:var(--muted)}
 .expect{font-size:15px;margin:0;max-width:60ch}
-.tramos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.tramos li{display:grid;grid-template-columns:92px 78px 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--grid);font-size:13.5px}
-.tramos li .h{font-family:var(--f-mono);font-size:12.5px}
-.tramos li.win{background:color-mix(in srgb,var(--amber) 18%,transparent)}
-.tramos .lvl{justify-self:start}
+.hg table{width:100%;border-collapse:collapse;table-layout:fixed;font-family:var(--f-mono);font-size:12px}
+.hg th,.hg td{text-align:center;padding:6px 1px;border-bottom:1px solid var(--grid);line-height:1.2;vertical-align:middle}
+.hg thead th{font-weight:500;color:var(--ink);border-bottom:1px solid var(--ink);padding-top:2px;position:relative}
+.hg tbody th{text-align:left;font-family:var(--f-body);font-weight:500;color:var(--ink);font-size:12px;width:70px;line-height:1.15}
+.hg thead th:first-child{width:70px}
+.hg td small{display:block;font:600 10px var(--f-body);color:var(--muted);margin-top:2px;white-space:nowrap;letter-spacing:-.01em}
+.hg tbody th small{font-size:10.5px;color:var(--muted);font-weight:400}
+.hg td small.wtag{font-weight:600}
+.hg .win{background:color-mix(in srgb,var(--amber) 20%,transparent)}
+.hg .night{opacity:.45}
+.hg .sc{display:inline-block;min-width:34px;padding:3px 0;border-radius:3px;font-weight:600}
+.hg .nd{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ink);margin-right:3px;vertical-align:2px}
+@media (prefers-reduced-motion:no-preference){.hg .nd{animation:pulse 2s ease-in-out infinite}}
+.hg .arr{vertical-align:-1px;margin-right:2px}
 .aside{font-size:14px;margin:0;color:var(--muted)} .aside b{color:var(--ink)}
 /* 2 · semana */
 .mx{overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)))}
@@ -192,7 +201,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);paddin
   <section class="verdict" id="verdict" aria-live="polite"></section>
   <section>
     <h2>La semana</h2>
-    <p class="aside" style="margin:-4px 0 10px">Puntaje de la mejor ventana, hora y ola en la rompiente. Toca una celda para ver el día.</p>
+    <p class="aside" style="margin:-4px 0 10px">Puntaje de 0 a 10 de la mejor ventana en cada spot, hora y ola en la rompiente. Toca una celda para ver el día.</p>
     <div class="mx" id="mx"></div>
     <div class="scale"><span><i class="l0"></i>no pasa</span><span><i class="l1"></i>igual sale</span><span><i class="l2"></i>bueno</span><span><i class="l3"></i>épico</span><span><i style="background:transparent;box-shadow:inset 0 0 0 2.5px var(--amber)"></i>mejor del día</span></div>
   </section>
@@ -257,7 +266,8 @@ function hourly(key,i){
   const chop=clamp(1-(S.ww[i]||0)*.35,.6,1), tf=1-.15*Math.min(1,Math.abs((S.tide[i]??0)-P.tidePref)/.5);
   const score=clamp(10*size*(.45+.55*per)*dq*wf*chop*tf*.97,0,10);
   const lo=S.shLo?.[i]??sh, hi=S.shHi?.[i]??sh;
-  return {key,i,score,face,heff,teff,sh,sp,sd:S.sd[i],h2,p2,d2:S.d2[i],sec,ws,wd,wg:S.wg[i],tide:S.tide[i],kw:.49*.9*(e1*sp+e2*p2),
+  return {key,i,score,face,heff,teff,sh,sp,sd:S.sd[i],h2,p2,d2:S.d2[i],sec,ws,wd,wg:S.wg[i],tide:S.tide[i],kw:.49*.9*(e1*sp+e2*p2),kj:1.9*e1*sp*sp,   // swell principal, igual que Surf-Forecast
+  
     ta:S.ta[i],cc:S.cc[i],pr:S.pr[i],sst:S.sst[i],lo,hi,wsLo:S.wsLo?.[i]??ws,wsHi:S.wsHi?.[i]??ws,nW:S.nW?.[i]||1,nV:S.nV?.[i]||1};
 }
 function daylight(key,d){const s=DATA.spots[key].sun[dKey(d)];return s?[toH(s[0]),toH(s[1])]:[7,20]}
@@ -276,8 +286,8 @@ const TREND=d=>d>=curDay+7;  // días 8 a 10: pocas fuentes, solo tendencia
 function confidence(x){const rel=(x.hi-x.lo)/Math.max(x.sh,.3),wsr=x.wsHi-x.wsLo;
   if(x.nW<3||x.nV<3) return ["baja","quedan pocas fuentes a esta distancia"];
   return rel<.28&&wsr<9?["alta","las fuentes coinciden"]:rel<.5&&wsr<15?["media","las fuentes difieren algo"]:["baja","las fuentes no se ponen de acuerdo"]}
-function board(x,key){ // [tabla, por qué] según tamaño en la rompiente, potencia y qué tan limpio está
-  const f=x.face,clean=windQ(x.wd,key)>=.85||x.ws<6,soft=x.kw<14;
+function board(x,key){ // [tabla, por qué] según tamaño en la rompiente, energía y qué tan limpio está
+  const f=x.face,clean=windQ(x.wd,key)>=.85||x.ws<6,soft=x.kj<600;
   if(f<.6) return ["el longboard","ola chica, necesitas remada y deslizamiento"];
   if(f<.9){
     if(key==="pue"&&clean) return ["el longboard","paredes largas y suaves para planear"];
@@ -308,19 +318,24 @@ const cap=t=>t[0].toUpperCase()+t.slice(1);
 const cleanWord=x=>{const w=windWord(x.ws,x.wd,x.key)[0];return ["glassy","offshore","cross-offshore"].includes(w)?"limpio":w==="cross-shore"?"con textura":"desordenado"};
 const lvlName=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
 const mr=f=>`${fm(f*.85)}–${fm(f*1.15)} m`;
-const periodWord=t=>t<10?"olas seguidas y cortas":t<13?"series normales":"series espaciadas y con fuerza";
+const periodWord=t=>t<10?"olas seguidas y cortas":t<13?"series normales":"series espaciadas";
 function tideTrend(key,i){const S=DATA.spots[key],a=S.tide[i],b=S.tide[i+1];return a==null||b==null?"":b>a?"marea subiendo":"marea bajando"}
-function segments(key,d){ // agrupa las horas con luz en tramos de estado parecido
-  const [sr,ss]=daylight(key,d),out=[];
-  for(let h=Math.ceil(sr-.25);h<=Math.floor(ss-.5);h++){const x=hourly(key,d*24+h),L=Math.min(lvl(x.score),2),c=cleanWord(x),id=L+"|"+(L===0?"":c);
-    const last=out[out.length-1];if(last&&last.id===id){last.end=h+1;last.xs.push(x)}else out.push({id,L,c,start:h,end:h+1,xs:[x]})}
-  return out.map(sg=>{const ws=Math.round(sg.xs.reduce((m,x)=>m+x.ws,0)/sg.xs.length),f=sg.xs.reduce((m,x)=>m+x.face,0)/sg.xs.length,w=windWord(ws,sg.xs[0].wd,key)[0];
-    const tp=Math.round(sg.xs.reduce((m,x)=>m+x.teff,0)/sg.xs.length);
-    const wd0=sg.xs[Math.floor(sg.xs.length/2)].wd,wc=windWord(ws,wd0,key)[1];
-    const sd0=sg.xs[Math.floor(sg.xs.length/2)].sd;
-    const txt=`<span class="nw">${sarrow(sd0)}${mr(f)}</span> · ${tp} s · <span class="nw">${arrow(wd0,wc)}${ws} km/h</span> <span class="wtag ${wc}">${w}</span>`;
-    return {...sg,txt}});
-}
+/* detalle por hora: grilla fija cada 3 h (mismas columnas todos los días, para comparar como en Surf-Forecast) */
+const GRID_H=[7,10,13,16,19];
+const wShort=w=>({"offshore":"off","cross-offshore":"cross-off","cross-shore":"cross","cross-onshore":"cross-on","onshore":"on","glassy":"glassy"})[w]||w;
+function hourGrid(key,d,a){const [sr,ss]=daylight(key,d),S=DATA.spots[key],nowH=nowIdx-d*24;
+  const cols=GRID_H.map(h=>{const x=hourly(key,d*24+h),night=h<Math.floor(sr)||h>=Math.ceil(ss),win=a&&h-1.5<a.best.end&&h+1.5>a.best.start,now=d===curDay&&Math.abs(nowH-h)<1.5;
+    const ww=windWord(x.ws,x.wd,key),t0=S.tide[d*24+h],t1=S.tide[d*24+h+1];return {h,x,night,win,now,ww,tide:t0,up:t1!=null&&t0!=null?t1>t0:null}});
+  const td=(c,inner,cls="")=>`<td class="${cls}${c.win?" win":""}${c.night?" night":""}">${inner}</td>`;
+  const row=(lab,f)=>`<tr><th scope="row">${lab}</th>${cols.map(f).join("")}</tr>`;
+  return `<div class="hg"><table><thead><tr><th></th>${cols.map(c=>`<th class="${c.win?"win":""}${c.night?" night":""}" scope="col">${c.now?'<i class="nd"></i>':""}${hhmm(c.h).slice(0,2)}h</th>`).join("")}</tr></thead><tbody>
+    ${row("Nivel",c=>td(c,`<span class="sc l${lvl(c.x.score)}">${fm(c.x.score)}</span>`))}
+    ${row("Ola <small>m</small>",c=>td(c,fm(c.x.face)))}
+    ${row("Período <small>s</small>",c=>td(c,Math.round(c.x.teff)))}
+    ${row("Energía <small>kJ</small>",c=>td(c,kjFmt(c.x.kj)))}
+    ${row("Viento <small>km/h</small>",c=>td(c,`<span class="nw">${arrow(c.x.wd,c.ww[1])}${Math.round(c.x.ws)}</span><small class="wtag ${c.ww[1]}">${wShort(c.ww[0])}</small>`))}
+    ${row("Marea <small>m</small>",c=>td(c,c.tide==null?"–":`${c.up==null?"":c.up?"↑":"↓"}${fm(Math.abs(c.tide)<.05?0:c.tide)}`))}
+  </tbody></table></div>`}
 function secondWindow(key,d,a){ // otra ventana surfeable separada al menos 3 h de la principal
   let b=null;for(const x of a.hrs){const h=x.i%24;if(Math.abs(h-a.best.start)<3&&Math.abs(h-(a.best.end-1))<3) continue;if(lvl(x.score)>=1&&cleanWord(x)!=="desordenado"&&(!b||x.score>b.score))b=x}
   return b}
@@ -328,14 +343,16 @@ function spoilAt(key,d,fromH){const [,ss]=daylight(key,d);for(let h=Math.ceil(fr
 
 const arrow=(wd,cls="")=>wd==null?"":`<svg class="arr ${cls}" width="12" height="12" viewBox="0 0 16 16" aria-label="viento del ${es16(wd)}" style="transform:rotate(${(wd+180)%360}deg)"><path d="M8 1.5 L13 13 L8 10.2 L3 13 Z" fill="currentColor"/></svg>`;
 const sarrow=sd=>sd==null?"":`<svg class="arr sw" width="12" height="12" viewBox="0 0 16 16" aria-label="swell del ${es16(sd)}" style="transform:rotate(${(sd+180)%360}deg)"><path d="M8 1 L12.5 7 L9.6 7 L9.6 15 L6.4 15 L6.4 7 L3.5 7 Z" fill="currentColor"/></svg>`;
-/* potencia de la ola: escala de 0 a 60 kW/m en cinco tramos con nombre */
-const PW=[{to:5,w:"floja",c:"var(--base)",n:"casi no empuja"},{to:12,w:"suave",c:"var(--c2)",n:"fácil, ideal para tablas grandes"},
-  {to:30,w:"buena",c:"var(--ok)",n:"empuja bien, la mejor para surfear"},{to:50,w:"potente",c:"var(--amber)",n:"pesada, para nivel avanzado"},
-  {to:80,w:"muy pesada",c:"var(--maral)",n:"peligrosa salvo en Topocalma con experiencia"}];
-const pwBand=kw=>PW.find(b=>kw<b.to)||PW[PW.length-1];
-function pwMeter(kw,w=100){const max=60,X=v=>Math.min(v,max)/max*w;let g="",x=0;
-  PW.forEach(b=>{const x2=X(Math.min(b.to,max));if(x2>x){g+=`<rect x="${x+.5}" y="5" width="${Math.max(0,x2-x-1)}" height="5" rx="1" fill="${b.c}" opacity="${b===pwBand(kw)?1:.35}"/>`;x=x2}});
-  const mx=X(kw);g+=`<path d="M${mx-3.5} 0 L${mx+3.5} 0 L${mx} 4.5 Z" fill="var(--ink)"/>`;
+/* energía de la ola en kJ (misma escala que Surf-Forecast: ≈ 1,9 × altura² × período²), cinco niveles con nombre */
+const PW=[{to:250,w:"floja",c:"var(--base)",n:"casi no empuja"},{to:600,w:"suave",c:"var(--c2)",n:"fácil, ideal para tablas grandes"},
+  {to:1500,w:"buena",c:"var(--ok)",n:"empuja bien, la mejor para surfear"},{to:3000,w:"potente",c:"var(--amber)",n:"pesada, para nivel avanzado"},
+  {to:6000,w:"muy pesada",c:"var(--maral)",n:"peligrosa salvo en Topocalma con experiencia"}];
+const pwBand=kj=>PW.find(b=>kj<b.to)||PW[PW.length-1];
+const kjFmt=kj=>Math.round(kj).toLocaleString("es-CL");
+function pwMeter(kj,w=100){const n=PW.length,bw=w/n;let g="";
+  PW.forEach((b,j)=>{g+=`<rect x="${j*bw+.5}" y="5" width="${bw-1}" height="5" rx="1" fill="${b.c}" opacity="${b===pwBand(kj)?1:.35}"/>`});
+  const j=PW.indexOf(pwBand(kj)),lo=j?PW[j-1].to:0,f=Math.max(0,Math.min(1,(kj-lo)/(PW[j].to-lo))),mx=j*bw+.5+f*(bw-1);
+  g+=`<path d="M${mx-3.5} 0 L${mx+3.5} 0 L${mx} 4.5 Z" fill="var(--ink)"/>`;
   return `<svg class="pwm" viewBox="0 0 ${w} 11" width="${w}" height="11" aria-hidden="true">${g}</svg>`}
 const perShort=t=>t<9?"corto":t<12?"normal":t<15?"espaciado":"largo";
 const camBtn=k=>{const c=SPOTS[k].cam;return c?`<a class="cam" data-k="${k}" href="${c.url}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1" y="4" width="10" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 7 L15 5 L15 11 L11 9 Z" fill="currentColor"/></svg>Ver cámara<small>${c.by} · ${c.note}</small></a>`:""};
@@ -343,7 +360,7 @@ function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
   return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
     <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
     <div><b>${Math.round(x.teff)} s</b><span>período · ${perShort(x.teff)}</span></div>
-    <div><b>${Math.round(x.kw)} kW/m</b>${pwMeter(x.kw)}<span>potencia ${pwBand(x.kw).w}</span></div>
+    <div><b>${kjFmt(x.kj)} kJ</b>${pwMeter(x.kj)}<span>energía ${pwBand(x.kj).w}</span></div>
     <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>
     ${extra?`<div><b>${extra[0]}</b><span>${extra[1]}</span></div>`:""}`}
 
@@ -425,7 +442,7 @@ function renderMatrix(){
   const nT=days.filter(TREND).length;
   let h=`<table><thead>${nT?`<tr><th></th><th colspan="${days.length-nT}"></th><th colspan="${nT}" class="trend-h">tendencia</th></tr>`:""}<tr><th class="s"></th>${days.map(d=>`<th class="d${TREND(d)?" tr":""}">${dName(d)}<b>${dNum(d)}</b></th>`).join("")}</tr></thead><tbody>`;
   KEYS.forEach(k=>{h+=`<tr><th class="s" scope="row">${SPOTS[k].name}</th>`+days.map(d=>{const a=ANA[d][k],b=bestOf(d),best=b.key===k&&lvl(a.score)>=1,sel=d===selDay&&k===(selKey||b.key);
-    return `<td><button class="cell l${lvl(a.score)}${best&&!TREND(d)?" best":""}${sel?" sel":""}${TREND(d)?" tr":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}${TREND(d)?" (tendencia)":`, ${a.score.toFixed(1)}, a las ${hhmm(a.best.start)}`}"><b>${a.score.toFixed(1)}</b>${TREND(d)?"":`<small>${hhmm(a.best.start).slice(0,2)}h</small>`}<small>${fm(a.best.a.face)} m</small></button></td>`}).join("")+`</tr>`});
+    return `<td><button class="cell l${lvl(a.score)}${best&&!TREND(d)?" best":""}${sel?" sel":""}${TREND(d)?" tr":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}${TREND(d)?" (tendencia)":`, ${fm(a.score)} de 10, a las ${hhmm(a.best.start)}`}"><b>${fm(a.score)}</b>${TREND(d)?"":`<small>${hhmm(a.best.start).slice(0,2)}h</small>`}<small>${fm(a.best.a.face)} m</small></button></td>`}).join("")+`</tr>`});
   document.getElementById("mx").innerHTML=h+`</tbody></table>`;
   document.querySelectorAll(".cell").forEach(c=>c.onclick=()=>{selDay=+c.dataset.d;selKey=c.dataset.k;renderMatrix();renderDay()});
 }
@@ -488,7 +505,7 @@ function tipHTML(k,i){const x=hourly(k,i),ww=windWord(x.ws,x.wd,k),S=DATA.spots[
   <dl><dt>Swell</dt><dd>${sarrow(x.sd)}${fm(x.sh)} m · del ${es16(x.sd)}</dd>
   <dt>Rompiente</dt><dd>${mr(x.face)}</dd>
   <dt>Período</dt><dd>${Math.round(x.teff)} s · ${perShort(x.teff)}</dd>
-  <dt>Potencia</dt><dd>${Math.round(x.kw)} kW/m · ${pwBand(x.kw).w}</dd>
+  <dt>Energía</dt><dd>${kjFmt(x.kj)} kJ · ${pwBand(x.kj).w}</dd>
   <dt>Viento</dt><dd>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h ${es16(x.wd)}<br><span class="wtag ${ww[1]}">${ww[0]}</span> · rachas ${Math.round(x.wg??x.ws)}</dd>
   <dt>Marea</dt><dd>${S.tide[i]!=null?(S.tide[i]>0?"+":"")+S.tide[i].toFixed(2).replace(".",",")+" m":"–"}${tr?" · "+tr.replace("marea ",""):""}</dd>
 </dl>`}
@@ -531,7 +548,7 @@ function renderDay(){
     <p class="sum">${sum}${passed}</p>
     ${!TREND(d)?doubt(mainK,a):""}
     ${chart(mainK,d)}${legend}
-    <ol class="tramos">${segments(mainK,d).map(sg=>`<li class="${sg.start<a.best.end&&sg.end>a.best.start?"win":""}"><span class="h">${hhmm(sg.start)}–${hhmm(sg.end)}</span><span class="lvl l${sg.L}">${lvlName(sg.xs.reduce((m,x)=>Math.max(m,x.score),0))}</span><span>${sg.txt}</span></li>`).join("")}</ol>
+    ${hourGrid(mainK,d,a)}
     ${trio(mainK,a)}
     ${more(mainK)}
     <div class="others">${others.map(k=>{const o=ANA[d][k];return `<details><summary><strong>${SPOTS[k].name}</strong><span class="t">${compare(k,a)}</span><span class="lvl l${lvl(o.score)}">${lvlName(o.score)}</span></summary>
@@ -589,8 +606,8 @@ function renderWhy(){setTimeout(bindSrows,0);
     <p><b>Confianza ${cf[0]}:</b> ${cf[1]}. Para ${SPOTS[k].name} a las ${hhmm(a.peak.i%24)}, el swell va de ${fm(x.lo)} a ${fm(x.hi)} m según la fuente (mediana ${fm(x.sh)} m, ${Math.round(x.sp)} s) y el viento de ${Math.round(x.wsLo)} a ${Math.round(x.wsHi)} km/h.</p>
     ${spread(k,d)}
     ${srcLine(k,d)}
-    <p><b>Potencia.</b> La fuerza con que llega la ola, en kilovatios por metro de frente: 0,49 × altura² × período. Floja bajo 5, suave de 5 a 12, buena de 12 a 30, potente de 30 a 50 y muy pesada sobre 50. Hoy en ${SPOTS[k].name}: ${Math.round(x.kw)} kW/m, ${pwBand(x.kw).w} (${pwBand(x.kw).n}).</p>
-    ${(()=>{let h='<div class="pwlegend">';PW.forEach((b,j)=>{h+=`<span><i style="background:${b.c}"></i>${b.w} <small>${j?PW[j-1].to:0}–${j<PW.length-1?b.to:"+"}</small></span>`});return h+'</div>'})()}
+    <p><b>Energía.</b> Cuánto empuja la ola, en kilojoules: ≈ 1,9 × altura² × período², la misma escala que usa Surf-Forecast. Por eso el período pesa tanto: 1 m a 16 s empuja más que 1,3 m a 10 s. Floja bajo 250, suave de 250 a 600, buena de 600 a 1.500, potente de 1.500 a 3.000 y muy pesada sobre 3.000. Hoy en ${SPOTS[k].name}: ${kjFmt(x.kj)} kJ, ${pwBand(x.kj).w} (${pwBand(x.kj).n}). En potencia física son ${Math.round(x.kw)} kW por metro de frente de ola.</p>
+    ${(()=>{let h='<div class="pwlegend">';PW.forEach((b,j)=>{h+=`<span><i style="background:${b.c}"></i>${b.w} <small>${j?kjFmt(PW[j-1].to):0}${j<PW.length-1?"–"+kjFmt(b.to):"+"}</small></span>`});return h+'</div>'})()}
     <p><b>Método.</b> Cada hora junta todos los modelos y sitios, descarta los valores que se alejan demasiado del resto (más de 2,5 MAD, con tope de 40% en altura, 30% en período y 50% en viento) y recomienda con la <b>mediana</b> de lo que queda.</p>
     <p><b>Puntaje.</b> Tamaño estimado en la rompiente (swell × factor del spot × período) contra el rango ideal de cada punta, período, dirección del swell, viento según la orientación de cada punta, mar de viento y marea. "Se ensucia" es la primera hora después de la ventana con viento onshore de 12 km/h o más, o cualquier viento sobre 22 km/h.</p>
     <p><b>Fuentes.</b> Oleaje: ${(M.wave||[]).join(", ")}. Viento: ${(M.wind||[]).join(", ")}. Sitios: ${web.join(", ")||"ninguno legible en esta corrida"}.${(M.failed||[]).length?` Sin respuesta: ${M.failed.join(", ")}.`:""}</p>`;
@@ -653,7 +670,7 @@ function parse(raw){const t=fixText(norm(raw)),o={};
 const ftin=cm=>{const i=Math.round(cm/2.54);return `${Math.floor(i/12)}'${i%12}"`};
 function boardFor(p,x,k){
   const kid=p.kid||(p.w&&p.w<45)||(p.h&&p.h<1.5),lv=p.lv||1,w=p.w,hcm=Math.round((p.h||1.72)*100);
-  const small=x.face<.9,weak=x.kw<12,big=x.face>=1.6&&x.kw>=30,clean=windQ(x.wd,k)>=.85||x.ws<6;
+  const small=x.face<.9,weak=x.kj<600,big=x.face>=1.6&&x.kj>=1500,clean=windQ(x.wd,k)>=.85||x.ws<6;
   const likes=p.boards||[];let type,why;
   if(lv===1){type="espuma";why="la más estable para remar y pararte; el volumen te deja agarrar casi cualquier ola"}
   else if(lv===2){
@@ -711,7 +728,7 @@ function boardAnswer(o){
   if(d===curDay){const f=nowIdx-curDay*24+.5,rem=o.spot?analyse(o.spot,d,f):bestOf(d,f);   // hoy: solo lo que queda del día
     if(rem&&rem.hrs.length>=2&&(lvl(rem.score)>=1||o.d!=null)) a=rem; else if(o.d==null&&curDay+1<ND){d=curDay+1;a=o.spot?ANA[d][o.spot]:bestOf(d)}}
   const k=a.key,x=a.best.a,r=boardFor(P,x,k);
-  let h=`<p>Para <b>${day(d)}</b> en ${SPOTS[k].name} (${mr(x.face)}, ${Math.round(x.teff)} s, ${Math.round(x.kw)} kW/m, ${hhmm(a.best.start)}–${hhmm(a.best.end)}):</p>
+  let h=`<p>Para <b>${day(d)}</b> en ${SPOTS[k].name} (${mr(x.face)}, ${Math.round(x.teff)} s, ${kjFmt(x.kj)} kJ, ${hhmm(a.best.start)}–${hhmm(a.best.end)}):</p>
     <div class="board"><b>${r.name}</b><div class="dims">${r.L[0]}–${r.L[1]} (${r.cm[0]}–${r.cm[1]} cm) · ancho ${r.width}${r.vol?` · ${r.vol[0]}–${r.vol[1]} L`:""}</div><div style="margin-top:4px">${cap(r.why)}.</div></div>`;
   h+=`<p class="muted">Para ${P.h?String(P.h.toFixed(2)).replace(".",",")+" m":""}${P.w?`, ${P.w} kg`:""}, nivel ${LVN[P.lv]}${P.boards?`, usas ${P.boards.join(" y ")}`:""}. Son medidas de referencia; confírmalas con quien te arriende o venda la tabla.</p>`;
   if(lvl(a.score)===0) h+=`<p>Ojo: ese día no pasa. ${(()=>{let b=null;for(let dd=curDay;dd<Math.min(ND,curDay+7);dd++){const z=bestOf(dd);if(!b||z.score>b.score)b=z}return b&&lvl(b.score)>=1?`Mejor ${day(b.d)} en ${SPOTS[b.key].name}.`:""})()}</p>`;
