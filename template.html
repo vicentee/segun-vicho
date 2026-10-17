@@ -173,6 +173,15 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);paddin
 .chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
 .chips button{border:1px solid var(--grid);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 11px;font:500 13px var(--f-body);cursor:pointer}
 .chat-f{display:flex;gap:8px;padding:8px 12px 12px;border-top:1px solid var(--grid)}
+.msg .w{opacity:0;transition:opacity .22s ease} .msg .w.on{opacity:1}
+.msg .board{transition:opacity .25s ease} .msg .board.pending{opacity:0}
+.msg.typing{min-height:20px}
+.msg.typing::before{content:"";display:block;width:34px;height:8px;background:radial-gradient(circle,var(--muted) 3px,transparent 3.5px) 0 0/11px 8px repeat-x;animation:dots 1s steps(3) infinite;opacity:.7}
+.msg.typing>*{display:none}
+@keyframes dots{0%{width:12px}100%{width:34px}}
+.chips button{animation:chipIn .25s ease both}
+@keyframes chipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.chips button{animation:none}}
 .chat-f input:focus{outline:2px solid var(--blue);outline-offset:1px}
 .chat-f input{flex:1;min-width:0;border:1px solid var(--grid);background:var(--panel);color:var(--ink);border-radius:999px;padding:10px 14px;font:16px var(--f-body)}
 .chat-f button{border:0;background:var(--ink);color:var(--bg);border-radius:999px;padding:0 16px;font:600 14px var(--f-body);cursor:pointer}
@@ -686,7 +695,10 @@ function outlook(o){
 function boardAnswer(o){
   const miss=[];if(!P.h)miss.push("estatura");if(!P.w)miss.push("peso");if(!P.lv)miss.push("nivel");
   if(miss.length) return {html:`<p>Para darte medidas necesito tu ${miss.join(", ").replace(/, ([^,]*)$/," y $1")}.</p><p class="muted">Ejemplo: "mido 1,75, peso 78 kg, nivel medio, uso longboard".</p>`,chips:P.lv?[]:["Soy principiante","Nivel medio","Soy avanzado"]};
-  const d=o.d!=null?o.d:verdictDay,a=o.spot?ANA[d][o.spot]:bestOf(d),k=a.key,x=a.best.a,r=boardFor(P,x,k);
+  let d=o.d!=null?o.d:verdictDay,a=o.spot?ANA[d][o.spot]:bestOf(d);
+  if(d===curDay){const f=nowIdx-curDay*24+.5,rem=o.spot?analyse(o.spot,d,f):bestOf(d,f);   // hoy: solo lo que queda del día
+    if(rem&&rem.hrs.length>=2&&(lvl(rem.score)>=1||o.d!=null)) a=rem; else if(o.d==null&&curDay+1<ND){d=curDay+1;a=o.spot?ANA[d][o.spot]:bestOf(d)}}
+  const k=a.key,x=a.best.a,r=boardFor(P,x,k);
   let h=`<p>Para <b>${day(d)}</b> en ${SPOTS[k].name} (${mr(x.face)}, ${Math.round(x.teff)} s, ${Math.round(x.kw)} kW/m, ${hhmm(a.best.start)}–${hhmm(a.best.end)}):</p>
     <div class="board"><b>${r.name}</b><div class="dims">${r.L[0]}–${r.L[1]} (${r.cm[0]}–${r.cm[1]} cm) · ancho ${r.width}${r.vol?` · ${r.vol[0]}–${r.vol[1]} L`:""}</div><div style="margin-top:4px">${cap(r.why)}.</div></div>`;
   h+=`<p class="muted">Para ${P.h?String(P.h.toFixed(2)).replace(".",",")+" m":""}${P.w?`, ${P.w} kg`:""}, nivel ${LVN[P.lv]}${P.boards?`, usas ${P.boards.join(" y ")}`:""}. Son medidas de referencia; confírmalas con quien te arriende o venda la tabla.</p>`;
@@ -694,7 +706,7 @@ function boardAnswer(o){
   if(r.kid) h+=`<p class="muted">Para niños: tabla blanda o con quillas de goma, y siempre con alguien en el agua.</p>`;
   return {html:h,chips:[`¿Y para ${d===curDay+1?"pasado mañana":"mañana"}?`,"¿Cómo viene la semana?"]}}
 function answer(raw){
-  const o=parse(raw);if(o.h&&o.w) P={};   // perfil nuevo completo: no arrastrar tablas de otra persona
+  const o=parse(raw);if(o.h&&o.w){delete P.boards;delete P.kid}   // medidas nuevas: no arrastrar tablas de otra consulta; el nivel se mantiene
   ["h","w","lv","boards","kid"].forEach(f=>{if(o[f]!=null)P[f]=o[f]});save();
   const profileOnly=(o.h||o.w||o.lv||o.boards)&&!o.outlook&&o.d==null&&!o.weekend;
   if(o.board||profileOnly){ev("chat-tabla","Chat: tabla");return boardAnswer(o)}
@@ -708,14 +720,30 @@ function answer(raw){
   return {html:`<p>Puedo responder sobre el pronóstico de los próximos días y recomendarte tabla según tu estatura, peso y nivel.</p><p class="muted">Prueba: "¿cómo viene la semana?", "¿mañana dónde?", "mido 1,50, peso 25 kg, avanzado".</p>`,chips:["¿Cómo viene la semana?","¿Mañana dónde?","¿Qué tabla uso?"]}}
 
 /* —— interfaz —— */
-function say(html,who){const m=document.createElement("div");m.className="msg "+who;m.innerHTML=html;log.appendChild(m);log.scrollTop=log.scrollHeight}
+const calm=matchMedia("(prefers-reduced-motion: reduce)").matches;let stream=null;
+const bottom=()=>{log.scrollTop=log.scrollHeight};
+function say(html,who,done){const m=document.createElement("div");m.className="msg "+who;m.innerHTML=html;log.appendChild(m);
+  if(who!=="bot"||calm){bottom();done&&done();return}
+  // respuesta que cae de a poco: primero "escribiendo…", luego palabra por palabra
+  const words=[];const walk=n=>{n.childNodes.forEach(c=>{if(c.nodeType===3){const parts=c.textContent.split(/(\s+)/);const f=document.createDocumentFragment();
+      parts.forEach(t=>{if(!t) return;if(/^\s+$/.test(t)){f.appendChild(document.createTextNode(t));return}const sp=document.createElement("span");sp.className="w";sp.textContent=t;words.push(sp);f.appendChild(sp)});c.replaceWith(f)}
+    else if(c.nodeType===1) walk(c)})};walk(m);
+  m.querySelectorAll(".board").forEach(b=>b.classList.add("pending"));m.classList.add("typing");bottom();
+  const step=Math.max(12,Math.min(32,1800/Math.max(1,words.length)));let i=0,t0=null;
+  const finish=()=>{words.forEach(w=>w.classList.add("on"));m.querySelectorAll(".board").forEach(b=>b.classList.remove("pending"));m.classList.remove("typing");stream=null;bottom();done&&done()};
+  stream={finish};
+  setTimeout(()=>{if(!stream) return;m.classList.remove("typing");
+    const tick=ts=>{if(!stream) return;if(t0==null)t0=ts;const n=Math.min(words.length,Math.floor((ts-t0)/step)+1);
+      for(;i<n;i++){words[i].classList.add("on");const bd=words[i].closest(".board");if(bd)bd.classList.remove("pending")}
+      if(i>=words.length){finish();return}if(log.scrollHeight-log.scrollTop-log.clientHeight<120)bottom();requestAnimationFrame(tick)};
+    requestAnimationFrame(tick)},420)}
 function setChips(list){chips.innerHTML="";(list||[]).forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>ask(t);chips.appendChild(b)})}
-function ask(t){t=t.trim();if(!t) return;say(t.replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c])),"me");const r=answer(t);say(r.html,"bot");setChips(r.chips)}
+function ask(t){t=t.trim();if(!t) return;if(stream)stream.finish();setChips([]);say(t.replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c])),"me");const r=answer(t);say(r.html,"bot",()=>setChips(r.chips))}
 let opened=false;
 function open(){$("chat").hidden=false;$("askBtn").hidden=true;ev("chat-abierto","Abrió el chat");
   if(!opened){opened=true;const v=bestOf(verdictDay);
-    say(`<p>Hola. ${dayLine(verdictDay)}</p><p>Pregúntame cómo viene la semana o qué tabla usar. Si me dices estatura, peso y nivel, te doy medidas.</p>`,"bot");
-    setChips(P.lv?["¿Qué tabla uso?","¿Cómo viene la semana?","¿Mañana dónde?"]:["¿Cómo viene la semana?","¿Qué tabla uso?","¿Mañana dónde?"])}
+    say(`<p>Hola. ${dayLine(verdictDay)}</p><p>Pregúntame cómo viene la semana o qué tabla usar. Si me dices estatura, peso y nivel, te doy medidas.</p>`,"bot",
+      ()=>setChips(P.lv?["¿Qué tabla uso?","¿Cómo viene la semana?","¿Mañana dónde?"]:["¿Cómo viene la semana?","¿Qué tabla uso?","¿Mañana dónde?"]))}
   setTimeout(()=>inp.focus({preventScroll:true}),50)}
 function close(){$("chat").hidden=true;$("askBtn").hidden=false;$("askBtn").focus()}
 $("askBtn").onclick=open;$("chatX").onclick=close;
@@ -723,6 +751,14 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("chat").hidden)c
 $("chatF").onsubmit=e=>{e.preventDefault();const t=inp.value;inp.value="";ask(t)};
 window.__svAnswer=answer;
 })();
+/* ——— siempre la última versión: GitHub guarda la página hasta 10 min; si hay datos o diseño más nuevos, recarga ——— */
+(()=>{if(location.protocol!=="https:") return;let busy=false;
+  const check=()=>{if(busy||document.hidden) return;busy=true;
+    fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+      const m=t.match(/"generated_utc":"([^"]+)"/);
+      if(m&&m[1]>DATA.generated_utc) location.replace(location.pathname+"?v="+encodeURIComponent(m[1]));
+    }).catch(()=>{}).finally(()=>{busy=false})};
+  setTimeout(check,1500);document.addEventListener("visibilitychange",check)})();
 /* ——— uso: eventos anónimos a GoatCounter (solo en la página pública; sin cookies) ——— */
 (()=>{const q=[],send=(p,t)=>{const g=window.goatcounter;if(g&&g.count){g.count({path:p,title:t||p,event:true});return true}return false};
   const ev=(p,t)=>{if(!send(p,t))q.push([p,t])};
