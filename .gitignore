@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 shot_*.png
+*_400_light.png
+*_400_dark.png
