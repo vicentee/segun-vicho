@@ -160,7 +160,7 @@ const SPOTS = {
     style:"Mejor temprano: el SO entra fuerte después del mediodía.",
     tideNote:"Marea media; en baja asoma la roca.",
     links:[["Wisuki","https://es.wisuki.com/forecast/4253/matanzas"],["Lineup · Mar Blanco","https://lineup.surf/es/spots/chile/o-higgins/matanzas/mar-blanco-1810"],["Breakfinder","https://breakfinder.surf/en/surf_spots/matanzas"],["Windguru","https://www.windguru.cz/42511"],["Surf-forecast","https://www.surf-forecast.com/breaks/Matanzas/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/matanzas/5842041f4e65fad6a7708cc3"]]},
-  pue:{name:"Puertecillo",face:310,k:0.8,lo:1.0,hi:2.3,min:0.6,max:3.2,tidePref:0.0,orient:"N en la punta, O en la playa",subs:"La punta · Tumán",
+  pue:{name:"Puertecillo",cam:{url:"https://misolas.com/cameras/802657",by:"Misolas",note:"de pago"},face:310,k:0.8,lo:1.0,hi:2.3,min:0.6,max:3.2,tidePref:0.0,orient:"N en la punta, O en la playa",subs:"La punta · Tumán",
     style:"Necesita tamaño para conectar. Aguanta el S mejor que Matanzas; el norte la arruina.",
     tideNote:"Baja a media subiendo.",
     links:[["Wisuki","https://es.wisuki.com/forecast/6652/puertecillo"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/litueche/puertecillo-1807"],["Swellnet","https://www.swellnet.com/forecasts/chile/o-higgins/puertecillo"],["Breakfinder","https://breakfinder.surf/en/surf_spots/puertecillo"],["Surf-forecast","https://www.surf-forecast.com/breaks/Puertecillo/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/puertecillo/5842041f4e65fad6a7708cc0"]]},
@@ -430,7 +430,7 @@ function renderDay(){
     ${trio(mainK,a)}
     ${more(mainK)}
     <div class="others">${others.map(k=>{const o=ANA[d][k];return `<details><summary><strong>${SPOTS[k].name}</strong><span class="t">${compare(k,a)}</span><span class="lvl l${lvl(o.score)}">${lvlName(o.score)}</span></summary>
-      <div class="inner">${chart(k,d)}${trio(k,o)}${more(k)}</div></details>`}).join("")}</div>`;
+      <div class="inner">${d===curDay&&SPOTS[k].cam?`<div>${camBtn(k)}</div>`:""}${chart(k,d)}${trio(k,o)}${more(k)}</div></details>`}).join("")}</div>`;
   renderWhy();bindCharts();
   document.querySelectorAll('.others details').forEach(dt=>dt.addEventListener('toggle',bindCharts));
 }
