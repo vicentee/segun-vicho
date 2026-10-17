@@ -75,13 +75,15 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .aside{font-size:14px;margin:0;color:var(--muted)} .aside b{color:var(--ink)}
 /* 2 · semana */
 .mx{overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)))}
-.mx table{border-collapse:separate;border-spacing:2px;width:100%;min-width:560px;table-layout:fixed}
+.mx table{border-collapse:separate;border-spacing:2px;width:100%;min-width:600px;table-layout:fixed}
+.mx th.s,.mx thead tr>th:first-child{position:sticky;left:0;z-index:2;background:var(--bg);box-shadow:8px 0 8px -8px rgba(0,0,0,.18)}
+.mx thead tr:first-child>th:first-child{box-shadow:none;width:84px}
 .mx th.trend-h{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding-left:4px;border-left:1px dashed var(--base)}
 .mx th.d.tr{color:var(--base)} .mx th.d.tr b{color:var(--muted)}
 .cell.tr{opacity:.5;background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(127,127,127,.12) 5px 6px)}
 .mx th{font-weight:500;font-size:11.5px;color:var(--muted);text-align:center;padding:0 0 3px}
 .mx th.d b{display:block;font-family:var(--f-head);font-size:16px;color:var(--ink);font-weight:600}
-.mx th.s{text-align:left;font-family:var(--f-head);font-size:13px;color:var(--ink);font-weight:600;width:70px}
+.mx th.s{text-align:left;font-family:var(--f-head);font-size:13px;color:var(--ink);font-weight:600;width:84px;padding-right:8px}
 .mx td{padding:0}
 .cell{width:100%;min-height:58px;border:0;border-radius:4px;padding:5px 1px;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;gap:1px}
 .cell b{font-family:var(--f-mono);font-size:13.5px;font-weight:600}
