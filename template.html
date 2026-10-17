@@ -77,6 +77,7 @@ header .meta{font-size:11.5px;color:var(--muted);font-family:var(--f-mono)}
 .wtag{font-weight:600}
 .nw{white-space:nowrap}
 .arr{width:.85em;height:.85em;vertical-align:-.08em;margin-right:3px;display:inline-block}
+.arr.sw{color:var(--blue)}
 .arr.w-good{color:var(--ok)} .arr.w-mid{color:var(--muted)} .arr.w-bad{color:var(--maral)}
 .w-good{color:var(--ok)} .w-mid{color:var(--muted)} .w-bad{color:var(--maral)}
 .others{display:flex;flex-direction:column;border-top:1px solid var(--grid)}
@@ -215,7 +216,8 @@ function segments(key,d){ // agrupa las horas con luz en tramos de estado pareci
   return out.map(sg=>{const ws=Math.round(sg.xs.reduce((m,x)=>m+x.ws,0)/sg.xs.length),f=sg.xs.reduce((m,x)=>m+x.face,0)/sg.xs.length,w=windWord(ws,sg.xs[0].wd,key)[0];
     const tp=Math.round(sg.xs.reduce((m,x)=>m+x.teff,0)/sg.xs.length);
     const wd0=sg.xs[Math.floor(sg.xs.length/2)].wd,wc=windWord(ws,wd0,key)[1];
-    const txt=`${mr(f)} · ${tp} s · <span class="nw">${arrow(wd0,wc)}${ws} km/h</span> <span class="wtag ${wc}">${w}</span>`;
+    const sd0=sg.xs[Math.floor(sg.xs.length/2)].sd;
+    const txt=`<span class="nw">${sarrow(sd0)}${mr(f)}</span> · ${tp} s · <span class="nw">${arrow(wd0,wc)}${ws} km/h</span> <span class="wtag ${wc}">${w}</span>`;
     return {...sg,txt}});
 }
 function secondWindow(key,d,a){ // otra ventana surfeable separada al menos 3 h de la principal
@@ -224,8 +226,9 @@ function secondWindow(key,d,a){ // otra ventana surfeable separada al menos 3 h 
 function spoilAt(key,d,fromH){const [,ss]=daylight(key,d);for(let h=Math.ceil(fromH);h<=Math.floor(ss);h++){const x=hourly(key,d*24+h);if((windWord(x.ws,x.wd,key)[1]==="w-bad"&&x.ws>=12)||x.ws>=22) return h}return null}
 
 const arrow=(wd,cls="")=>wd==null?"":`<svg class="arr ${cls}" viewBox="0 0 16 16" aria-label="viento del ${es16(wd)}" style="transform:rotate(${(wd+180)%360}deg)"><path d="M8 1.5 L13 13 L8 10.2 L3 13 Z" fill="currentColor"/></svg>`;
+const sarrow=sd=>sd==null?"":`<svg class="arr sw" viewBox="0 0 16 16" aria-label="swell del ${es16(sd)}" style="transform:rotate(${(sd+180)%360}deg)"><path d="M8 1 L12.5 7 L9.6 7 L9.6 15 L6.4 15 L6.4 7 L3.5 7 Z" fill="currentColor"/></svg>`;
 function metrics(x,k){const ww=windWord(x.ws,x.wd,k);
-  return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
+  return `<div><b>${sarrow(x.sd)}${mr(x.face)}</b><span>ola · swell del ${es16(x.sd)}</span></div>
     <div><b>${Math.round(x.teff)} s</b><span>período</span></div>
     <div><b>${Math.round(x.kw)} kW/m</b><span>potencia</span></div>
     <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>`}
@@ -277,6 +280,8 @@ function chart(key,d){
   const minSw=P.min/P.k;
   g+=`<line x1="${x0}" x2="${x1}" y1="${Y1(minSw)}" y2="${Y1(minSw)}" stroke="var(--base)" stroke-dasharray="2 3"/>`+lab(x1,Y1(minSw)-3,"rompe desde aquí","end");
   g+=lab(x0,L1[0]-5,"ola");
+  for(let h=h0+1;h<h1;h+=2){const sd=S.sd[idx(h)];if(sd==null) continue;
+    g+=`<g transform="translate(${X(h)},${L1[1]-7}) rotate(${(sd+180)%360})"><path d="M0 -6 L4 -0.5 L1.5 -0.5 L1.5 6 L-1.5 6 L-1.5 -0.5 L-4 -0.5 Z" fill="var(--blue)" opacity=".75"><title>${hhmm(h)} · swell del ${es16(sd)}</title></path></g>`}
   g+=`<polyline points="${rng.map(h=>`${X(h)},${Y1(S.sh[idx(h)]||0)}`).join(" ")}" fill="none" stroke="var(--blue)" stroke-width="2.4" stroke-linejoin="round"/>`;
   if(a){const pk=a.peak.i%24;g+=`<circle cx="${X(pk)}" cy="${Y1(S.sh[idx(pk)])}" r="4" fill="var(--bg)" stroke="var(--blue)" stroke-width="2"/>`}
   // viento: barras por color; número solo dentro de la ventana
@@ -295,13 +300,13 @@ function chart(key,d){
   for(let h=6;h<=21;h+=3) g+=lab(X(h),H-3,h+"h","middle","var(--ink)");
   return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ola, viento y marea por hora en ${P.name}">${g}</svg></div>`;
 }
-const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>terral</span><span><i style="background:var(--base)"></i>cruzado</span><span><i style="background:var(--maral)"></i>maral</span><span>flecha: hacia dónde sopla</span></div>`;
+const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>terral</span><span><i style="background:var(--base)"></i>cruzado</span><span><i style="background:var(--maral)"></i>maral</span><span>flechas: hacia dónde van el swell (azul) y el viento</span></div>`;
 function trio(k,a){const x=a.best.a;
   return `<div class="facts">${metrics(x,k)}</div><p class="aside">Ventana <b>${hhmm(a.best.start)}–${hhmm(a.best.end)}</b> · swell ${fm(x.sh)} m ${es16(x.sd)} · lleva ${board(x,k)}.</p>`}
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Cómo rompe ${P.name}</summary><p>${P.style}</p><p><b>Marea:</b> ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
-  return `${mr(x.face)} · ${Math.round(x.teff)} s · <span class="nw">${arrow(x.wd,windWord(x.ws,x.wd,k)[1])}${Math.round(x.ws)} km/h</span> · ${hhmm(a.best.start)}`}
+  return `<span class="nw">${sarrow(x.sd)}${mr(x.face)}</span> · ${Math.round(x.teff)} s · <span class="nw">${arrow(x.wd,windWord(x.ws,x.wd,k)[1])}${Math.round(x.ws)} km/h</span> · ${hhmm(a.best.start)}`}
 function renderDay(){
   const d=selDay,mainK=selKey||bestOf(d).key,a=ANA[d][mainK],P=SPOTS[mainK],x=a.best.a,sp=spoilAt(mainK,d,a.best.end);
   const sum=lvl(a.score)>=1?`${mr(x.face)}, mar ${cleanWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
