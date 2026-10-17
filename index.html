@@ -1,3 +1,15 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F3B45">
+<meta name="apple-mobile-web-app-title" content="Según Vicho">
+<link rel="icon" type="image/svg+xml" href="icons/icono.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <title>Según Vicho</title>
 <meta name="description" content="Reporte de surf para Matanzas, Puertecillo y Topocalma: mediana de 15 fuentes, actualizado dos veces al día.">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -362,3 +374,5 @@ renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
 document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias; revisa la cámara antes de manejar. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`;
 </script>
+
+</html>

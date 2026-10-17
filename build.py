@@ -37,6 +37,21 @@ FLOORS = {"sh": (0.25, 0.22), "tp": (2.5, 0.0), "ws": (6.0, 0.30), "wg": (8.0, 0
 CAPS = {"sh": 0.40, "tp": 0.30, "ws": 0.50, "wg": 0.50, "h2": 0.60, "p2": 0.35, "ww": 0.60}
 
 
+HEAD = """<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F3B45">
+<meta name="apple-mobile-web-app-title" content="Según Vicho">
+<link rel="icon" type="image/svg+xml" href="icons/icono.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+"""
+
+
 def get(url, tries=4):
     err = None
     for t in range(tries):
@@ -223,6 +238,8 @@ if __name__ == "__main__":
     web = json.load(open(webp)) if webp != "-" else {}
     data = build(web)
     html = open(tpl).read().replace("__DATA__", json.dumps(data, separators=(",", ":"), ensure_ascii=False))
+    if outp.endswith("index.html"):  # página pública: documento completo con íconos y manifest
+        html = HEAD + html + "\n</html>\n"
     open(outp, "w").write(html)
     for k, s in data["spots"].items():
         print(k, "| olas:", s["models"]["wave"], "| viento:", len(s["models"]["wind"]), "| web:", s["models"]["web"], "| fallaron:", s["models"]["failed"])
