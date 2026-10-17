@@ -46,6 +46,9 @@ header .t{font-family:var(--f-head);font-weight:600;font-size:17px;line-height:1
 header .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
 header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-top:4px;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
 header .upd{white-space:nowrap}
+.pwm{display:block;margin:4px 0 2px;max-width:100%}
+.pwlegend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:-6px}
+.pwlegend i{display:inline-block;width:14px;height:6px;border-radius:1px;margin-right:4px;vertical-align:1px}
 header .clock{color:var(--ink);font-size:12px;display:inline-flex;align-items:center;gap:5px}
 header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block}
 @media (prefers-reduced-motion:no-preference){header .clock i{animation:pulse 2s ease-in-out infinite}}
@@ -268,11 +271,20 @@ function spoilAt(key,d,fromH){const [,ss]=daylight(key,d);for(let h=Math.ceil(fr
 
 const arrow=(wd,cls="")=>wd==null?"":`<svg class="arr ${cls}" width="12" height="12" viewBox="0 0 16 16" aria-label="viento del ${es16(wd)}" style="transform:rotate(${(wd+180)%360}deg)"><path d="M8 1.5 L13 13 L8 10.2 L3 13 Z" fill="currentColor"/></svg>`;
 const sarrow=sd=>sd==null?"":`<svg class="arr sw" width="12" height="12" viewBox="0 0 16 16" aria-label="swell del ${es16(sd)}" style="transform:rotate(${(sd+180)%360}deg)"><path d="M8 1 L12.5 7 L9.6 7 L9.6 15 L6.4 15 L6.4 7 L3.5 7 Z" fill="currentColor"/></svg>`;
+/* potencia de la ola: escala de 0 a 60 kW/m en cinco tramos con nombre */
+const PW=[{to:5,w:"floja",c:"var(--base)",n:"casi no empuja"},{to:12,w:"suave",c:"var(--c2)",n:"fácil, ideal para tablas grandes"},
+  {to:30,w:"buena",c:"var(--ok)",n:"empuja bien, la mejor para surfear"},{to:50,w:"potente",c:"var(--amber)",n:"pesada, para nivel avanzado"},
+  {to:80,w:"muy pesada",c:"var(--maral)",n:"peligrosa salvo en Topocalma con experiencia"}];
+const pwBand=kw=>PW.find(b=>kw<b.to)||PW[PW.length-1];
+function pwMeter(kw,w=100){const max=60,X=v=>Math.min(v,max)/max*w;let g="",x=0;
+  PW.forEach(b=>{const x2=X(Math.min(b.to,max));if(x2>x){g+=`<rect x="${x+.5}" y="5" width="${Math.max(0,x2-x-1)}" height="5" rx="1" fill="${b.c}" opacity="${b===pwBand(kw)?1:.35}"/>`;x=x2}});
+  const mx=X(kw);g+=`<path d="M${mx-3.5} 0 L${mx+3.5} 0 L${mx} 4.5 Z" fill="var(--ink)"/>`;
+  return `<svg class="pwm" viewBox="0 0 ${w} 11" width="${w}" height="11" aria-hidden="true">${g}</svg>`}
 function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
   return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
     <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
     <div><b>${Math.round(x.teff)} s</b><span>período</span></div>
-    <div><b>${Math.round(x.kw)} kW/m</b><span>potencia</span></div>
+    <div><b>${Math.round(x.kw)} kW/m</b>${pwMeter(x.kw)}<span>potencia ${pwBand(x.kw).w}</span></div>
     <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>
     ${extra?`<div><b>${extra[0]}</b><span>${extra[1]}</span></div>`:""}`}
 
@@ -356,7 +368,7 @@ function tipHTML(k,i){const x=hourly(k,i),ww=windWord(x.ws,x.wd,k),S=DATA.spots[
   <dl><dt>Swell</dt><dd>${sarrow(x.sd)}${fm(x.sh)} m · del ${es16(x.sd)}</dd>
   <dt>Rompiente</dt><dd>${mr(x.face)}</dd>
   <dt>Período</dt><dd>${Math.round(x.teff)} s</dd>
-  <dt>Potencia</dt><dd>${Math.round(x.kw)} kW/m</dd>
+  <dt>Potencia</dt><dd>${Math.round(x.kw)} kW/m · ${pwBand(x.kw).w}</dd>
   <dt>Viento</dt><dd>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h ${es16(x.wd)}<br><span class="wtag ${ww[1]}">${ww[0]}</span> · rachas ${Math.round(x.wg??x.ws)}</dd>
   <dt>Marea</dt><dd>${S.tide[i]!=null?(S.tide[i]>0?"+":"")+S.tide[i].toFixed(2).replace(".",",")+" m":"–"}${tr?" · "+tr.replace("marea ",""):""}</dd>
 </dl>`}
@@ -451,6 +463,8 @@ function renderWhy(){setTimeout(bindSrows,0);
     <p><b>Confianza ${cf[0]}:</b> ${cf[1]}. Para ${SPOTS[k].name} a las ${hhmm(a.peak.i%24)}, el swell va de ${fm(x.lo)} a ${fm(x.hi)} m según la fuente (mediana ${fm(x.sh)} m, ${Math.round(x.sp)} s) y el viento de ${Math.round(x.wsLo)} a ${Math.round(x.wsHi)} km/h.</p>
     ${spread(k,d)}
     ${srcLine(k,d)}
+    <p><b>Potencia.</b> La fuerza con que llega la ola, en kilovatios por metro de frente: 0,49 × altura² × período. Floja bajo 5, suave de 5 a 12, buena de 12 a 30, potente de 30 a 50 y muy pesada sobre 50. Hoy en ${SPOTS[k].name}: ${Math.round(x.kw)} kW/m, ${pwBand(x.kw).w} (${pwBand(x.kw).n}).</p>
+    ${(()=>{let h='<div class="pwlegend">';PW.forEach((b,j)=>{h+=`<span><i style="background:${b.c}"></i>${b.w} <small>${j?PW[j-1].to:0}–${j<PW.length-1?b.to:"+"}</small></span>`});return h+'</div>'})()}
     <p><b>Método.</b> Cada hora junta todos los modelos y sitios, descarta los valores que se alejan demasiado del resto (más de 2,5 MAD, con tope de 40% en altura, 30% en período y 50% en viento) y recomienda con la <b>mediana</b> de lo que queda.</p>
     <p><b>Puntaje.</b> Tamaño estimado en la rompiente (swell × factor del spot × período) contra el rango ideal de cada punta, período, dirección del swell, viento según la orientación de cada punta, mar de viento y marea. "Se ensucia" es la primera hora después de la ventana con viento onshore de 12 km/h o más, o cualquier viento sobre 22 km/h.</p>
     <p><b>Fuentes.</b> Oleaje: ${(M.wave||[]).join(", ")}. Viento: ${(M.wind||[]).join(", ")}. Sitios: ${web.join(", ")||"ninguno legible en esta corrida"}.${(M.failed||[]).length?` Sin respuesta: ${M.failed.join(", ")}.`:""}</p>`;
