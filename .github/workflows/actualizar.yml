@@ -2,7 +2,8 @@ name: Actualizar reporte
 
 on:
   schedule:
-    # 00:15, 06:15, 12:15 y 18:15 en Chile (horario de verano, UTC-3)
+    # 00:15, 06:15, 12:15 y 18:15 en Chile con horario de verano (UTC-3).
+    # En invierno (UTC-4) corre una hora antes; la tarea programada principal sí sigue la hora de Chile.
     - cron: "15 3,9,15,21 * * *"
   push:
     branches: [main]

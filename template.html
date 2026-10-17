@@ -64,7 +64,7 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .tramos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .tramos li{display:grid;grid-template-columns:92px 78px 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--grid);font-size:13.5px}
 .tramos li .h{font-family:var(--f-mono);font-size:12.5px}
-.tramos li.now{background:color-mix(in srgb,var(--amber) 18%,transparent)}
+.tramos li.win{background:color-mix(in srgb,var(--amber) 18%,transparent)}
 .tramos .lvl{justify-self:start}
 .aside{font-size:14px;margin:0;color:var(--muted)} .aside b{color:var(--ink)}
 /* 2 · semana */
@@ -399,7 +399,7 @@ function chartMove(e){const c=e.currentTarget,svg=c.querySelector("svg"),tip=c.q
   const gl=svg.querySelector(".guide"),gd=svg.querySelector(".gdot");gl.setAttribute("x1",X);gl.setAttribute("x2",X);gl.setAttribute("opacity",".35");gd.setAttribute("cx",X);gd.setAttribute("cy",y);gd.setAttribute("opacity","1");
   if(tip.dataset.i!=i){tip.innerHTML=tipHTML(k,i);tip.dataset.i=i}
   tip.hidden=false;const r=c.getBoundingClientRect(),px=(X/svg.viewBox.baseVal.width)*r.width,tw=tip.offsetWidth;
-  tip.style.left=Math.round(px+14+tw>r.width?px-14-tw:px+14)+"px";}
+  tip.style.left=Math.round(clamp(px+14+tw>r.width?px-14-tw:px+14,0,Math.max(0,r.width-tw)))+"px";}
 function chartLeave(e){const c=e.currentTarget;c.querySelector(".tip").hidden=true;c.querySelectorAll(".guide,.gdot").forEach(el=>el.setAttribute("opacity","0"))}
 function grab(move){return e=>{if(e.pointerType==="mouse"){e.preventDefault();try{e.currentTarget.setPointerCapture(e.pointerId)}catch(_){}}move(e)}}
 function release(leave){return e=>{const t=e.currentTarget;try{if(t.hasPointerCapture(e.pointerId)){t.releasePointerCapture(e.pointerId);
@@ -418,15 +418,18 @@ function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.fa
 function renderDay(){
   const d=selDay,mainK=selKey||bestOf(d).key,a=ANA[d][mainK],P=SPOTS[mainK],x=a.best.a,sp=spoilAt(mainK,d,a.best.end);
   const sum=lvl(a.score)>=1?`${mr(x.face)}, mar ${cleanWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
+  // hoy: si la mejor ventana ya pasó, decir qué queda (coherente con el veredicto)
+  const hNow=nowIdx-d*24,rest=d===curDay&&lvl(a.score)>=1&&a.best.end<=hNow?analyse(mainK,d,hNow+.5):null;
+  const passed=d===curDay&&lvl(a.score)>=1&&a.best.end<=hNow?` Esa ventana ya pasó${rest&&rest.hrs.length>=2&&lvl(rest.score)>=1?`; lo que queda: <b>${hhmm(rest.best.start)}–${hhmm(rest.best.end)}</b> (${lvlName(rest.score).toLowerCase()})`:""}.`:"";
   const others=KEYS.filter(k=>k!==mainK).sort((p,q)=>ANA[d][q].score-ANA[d][p].score);
   const trendNote=TREND(d)?`<p class="warn" style="margin:0">Tendencia: a esta distancia quedan 1–2 modelos de ola y 3–4 de viento. Sirve para ver si viene swell y de qué tamaño, no para elegir la hora.</p>`:"";
   document.getElementById("day").innerHTML=trendNote+`
     <div class="k">${dLong(d)} ${dNum(d)}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${P.name}</h3><span class="lvl l${lvl(a.score)}">${lvlName(a.score)}</span></div>
     ${d===curDay?camBtn(mainK):""}
-    <p class="sum">${sum}</p>
+    <p class="sum">${sum}${passed}</p>
     ${chart(mainK,d)}${legend}
-    <ol class="tramos">${segments(mainK,d).map(sg=>`<li class="${sg.start<=a.best.start&&sg.end>a.best.start?"now":""}"><span class="h">${hhmm(sg.start)}–${hhmm(sg.end)}</span><span class="lvl l${sg.L}">${lvlName(sg.xs.reduce((m,x)=>Math.max(m,x.score),0))}</span><span>${sg.txt}</span></li>`).join("")}</ol>
+    <ol class="tramos">${segments(mainK,d).map(sg=>`<li class="${sg.start<a.best.end&&sg.end>a.best.start?"win":""}"><span class="h">${hhmm(sg.start)}–${hhmm(sg.end)}</span><span class="lvl l${sg.L}">${lvlName(sg.xs.reduce((m,x)=>Math.max(m,x.score),0))}</span><span>${sg.txt}</span></li>`).join("")}</ol>
     ${trio(mainK,a)}
     ${more(mainK)}
     <div class="others">${others.map(k=>{const o=ANA[d][k];return `<details><summary><strong>${SPOTS[k].name}</strong><span class="t">${compare(k,a)}</span><span class="lvl l${lvl(o.score)}">${lvlName(o.score)}</span></summary>
