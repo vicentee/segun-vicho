@@ -82,6 +82,9 @@ header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-
 .tip-h b{font-family:var(--f-head);font-size:15px}
 .tip .arr{width:11px;height:11px}
 .tip dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0}
+.srow{position:relative;touch-action:pan-y}
+.srow .tip{top:30px}
+.tip-n{margin:6px 0 0;font-size:11.5px;color:var(--muted);white-space:normal;max-width:200px}
 .tip dt{color:var(--muted)} .tip dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap}
 .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .trio b{display:block;font-family:var(--f-head);font-size:17px;font-weight:600;line-height:1.2}
@@ -372,24 +375,46 @@ function renderDay(){
 }
 
 /* ——— 4 · verificar ——— */
-function spread(k,d){const a=ANA[d][k];if(!a) return "";const S=DATA.spots[k],i=a.peak.i;
-  const row=(src,cut,med,unit,f,lo,hi,label)=>{const ent=Object.entries(src).filter(([,v])=>v[i]!=null);if(ent.length<2) return "";
+function spread(k,d){const a=ANA[d][k];if(!a) return "";const S=DATA.spots[k],i=a.peak.i,M=S.models||{};
+  const kind=s_=>(M.wave||[]).includes(s_)||(M.wind||[]).includes(s_)?"modelo":"sitio web";
+  const row=(src,cut,med,unit,f,lo,hi,label,var_)=>{const ent=Object.entries(src).filter(([,v])=>v[i]!=null);if(ent.length<2) return "";
     const vals=ent.map(([,v])=>v[i]),mn=Math.min(lo,...vals),mx=Math.max(hi,...vals),pad=(mx-mn)*.1||.1,A=mn-pad,B=mx+pad,W=520,x0=110,x1=W-14,X=v=>x0+(v-A)/(B-A)*(x1-x0);
     let g=`<text x="0" y="16" font-size="11" fill="var(--ink)" font-family="IBM Plex Sans" font-weight="600">${label}</text>`;
     g+=`<line x1="${x0}" x2="${x1}" y1="12" y2="12" stroke="var(--grid)"/><rect x="${X(lo)}" y="6" width="${Math.max(1,X(hi)-X(lo))}" height="12" fill="var(--blue2)" opacity=".5" rx="2"/>`;
     g+=`<line x1="${X(med)}" x2="${X(med)}" y1="2" y2="22" stroke="var(--blue)" stroke-width="2"/>`;
-    ent.forEach(([s,v])=>{const c=(cut[s]||[]).includes(i);g+=`<circle cx="${X(v[i])}" cy="12" r="4.5" fill="${c?"var(--bg)":"var(--ink)"}" stroke="${c?"var(--maral)":"var(--bg)"}" stroke-width="${c?2:1}"><title>${s}: ${f(v[i])} ${unit}${c?" · descartada":""}</title></circle>`});
+    const pts=ent.map(([s_,v])=>({s:s_,v:v[i],c:(cut[s_]||[]).includes(i),x:+X(v[i]).toFixed(1),k:kind(s_)}));
+    pts.forEach(p=>{g+=`<circle cx="${p.x}" cy="12" r="4.5" fill="${p.c?"var(--bg)":"var(--ink)"}" stroke="${p.c?"var(--maral)":"var(--bg)"}" stroke-width="${p.c?2:1}"/>`});
+    g+=`<circle class="ring" cx="0" cy="12" r="7.5" fill="none" stroke="var(--blue)" stroke-width="1.5" opacity="0"/>`;
     g+=`<text x="${x0}" y="36" font-size="9.5" fill="var(--muted)" font-family="IBM Plex Mono">${f(A)}</text><text x="${x1}" y="36" text-anchor="end" font-size="9.5" fill="var(--muted)" font-family="IBM Plex Mono">${f(B)} ${unit}</text>`;
-    const cuts=ent.filter(([s])=>(cut[s]||[]).includes(i)).map(([s,v])=>`${s} ${f(v[i])}`);
-    return `<svg viewBox="0 0 ${W} 40" style="width:100%;display:block">${g}</svg>${cuts.length?`<div class="src" style="margin:-2px 0 6px 0">Descartada${cuts.length>1?"s":""}: ${cuts.join(", ")}</div>`:""}`};
-  return `<div><div class="k" style="margin-bottom:4px">Qué dice cada fuente a las ${hhmm(i%24)} · línea = mediana, banda = rango usado, ○ = descartada</div><div class="chart">
-    ${row(S.srcSh||{},S.cutSh||{},S.sh[i],"m",v=>fm(v),S.shLo?.[i]??S.sh[i],S.shHi?.[i]??S.sh[i],"Swell")}
-    ${row(S.srcWs||{},S.cutWs||{},S.ws[i],"km/h",v=>Math.round(v),S.wsLo?.[i]??S.ws[i],S.wsHi?.[i]??S.ws[i],"Viento")}</div></div>`}
+    const cuts=pts.filter(p=>p.c).map(p=>`${p.s} ${f(p.v)}`);
+    const meta=JSON.stringify({pts,med,lo,hi,unit,mx:+X(med).toFixed(1),dec:var_==="sh"?1:0}).replace(/"/g,"&quot;");
+    return `<div class="srow" data-meta="${meta}"><svg viewBox="0 0 ${W} 40" style="width:100%;display:block;cursor:crosshair">${g}</svg><div class="tip" hidden></div></div>${cuts.length?`<div class="src" style="margin:-2px 0 6px 0">Descartada${cuts.length>1?"s":""}: ${cuts.join(", ")}</div>`:""}`};
+  return `<div><div class="k" style="margin-bottom:4px">Qué dice cada fuente a las ${hhmm(i%24)} · toca un punto para ver el detalle</div>
+    ${row(S.srcSh||{},S.cutSh||{},S.sh[i],"m",v=>fm(v),S.shLo?.[i]??S.sh[i],S.shHi?.[i]??S.sh[i],"Swell","sh")}
+    ${row(S.srcWs||{},S.cutWs||{},S.ws[i],"km/h",v=>Math.round(v),S.wsLo?.[i]??S.ws[i],S.wsHi?.[i]??S.ws[i],"Viento","ws")}
+    <div class="scale" style="margin-top:2px"><span><i style="background:var(--ink);border-radius:50%"></i>fuente usada</span><span><i style="background:transparent;border:2px solid var(--maral);border-radius:50%"></i>descartada</span><span><i style="background:var(--blue);width:3px"></i>mediana</span><span><i style="background:var(--blue2);opacity:.6"></i>rango usado</span></div></div>`}
+function srowMove(e){const r=e.currentTarget,svg=r.querySelector("svg"),tip=r.querySelector(".tip"),m=JSON.parse(r.dataset.meta);
+  const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+  const fmt=v=>m.dec?fm(v):Math.round(v);let best=null;m.pts.forEach(q=>{const dx=Math.abs(q.x-p.x);if(!best||dx<best.dx)best={...q,dx}});
+  const ring=svg.querySelector(".ring");let html,x;
+  if(Math.abs(m.mx-p.x)<Math.min(8,best.dx)){x=m.mx;ring.setAttribute("opacity","0");
+    const used=m.pts.filter(q=>!q.c).length;
+    html=`<div class="tip-h"><b>Mediana</b></div><dl><dt>Valor</dt><dd>${fmt(m.med)} ${m.unit}</dd><dt>Rango usado</dt><dd>${fmt(m.lo)}–${fmt(m.hi)} ${m.unit}</dd><dt>Fuentes</dt><dd>${used} usadas · ${m.pts.length-used} descartadas</dd></dl><p class="tip-n">El valor del medio de las fuentes que quedaron. Una fuente extrema no la mueve.</p>`;}
+  else{x=best.x;ring.setAttribute("cx",best.x);ring.setAttribute("opacity","1");
+    const diff=best.v-m.med,pct=m.med?Math.round(100*diff/m.med):0,sgn=diff>0?"+":"";
+    html=`<div class="tip-h"><b>${best.s}</b><span class="mono" style="color:var(--muted)">${best.k}</span></div><dl><dt>Dice</dt><dd>${fmt(best.v)} ${m.unit}</dd><dt>Vs mediana</dt><dd>${sgn}${fmt(diff)} ${m.unit} (${sgn}${pct}%)</dd></dl>
+    <p class="tip-n">${best.c?`<b style="color:var(--maral)">Descartada:</b> se aleja demasiado del resto, así que no entra en la recomendación.`:`<b>Usada</b> en la mediana: está dentro de lo que dicen las demás fuentes.`}</p>`;}
+  if(tip.dataset.h!==html){tip.innerHTML=html;tip.dataset.h=html}
+  tip.hidden=false;const rr=r.getBoundingClientRect(),px=x/svg.viewBox.baseVal.width*rr.width,tw=tip.offsetWidth;
+  tip.style.left=Math.round(Math.max(0,px+12+tw>rr.width?px-12-tw:px+12))+"px";}
+function srowLeave(e){const r=e.currentTarget;r.querySelector(".tip").hidden=true;r.querySelector(".ring").setAttribute("opacity","0")}
+function bindSrows(){document.querySelectorAll(".srow").forEach(r=>{if(r.dataset.bound) return;r.dataset.bound=1;
+  r.addEventListener("pointermove",srowMove);r.addEventListener("pointerdown",srowMove);r.addEventListener("pointerleave",srowLeave)})}
 function srcLine(k,d){const A=(DATA.spots[k].audit||{})[dKey(d)]||[];if(!A.length) return "";
   const used=A.filter(x=>x.used>0).length,cut=A.filter(x=>x.cut>0&&x.cut/(x.used+x.cut)>=.25);
   return `<div class="src"><b>${used} fuentes</b> en la mediana${cut.length?` · descartadas parte del día: ${cut.map(x=>`${x.src} (${Math.round(100*x.cut/(x.used+x.cut))}%)`).join(", ")}`:" · ninguna descartada"}</div>`}
 
-function renderWhy(){
+function renderWhy(){setTimeout(bindSrows,0);
   const d=selDay,k=selKey||bestOf(d).key,a=ANA[d][k],x=a.best.a,cf=confidence(x),M=DATA.spots[k].models||{};
   const web=[...new Set(KEYS.flatMap(kk=>(DATA.spots[kk].models||{}).web||[]))];
   document.getElementById("whyBody").innerHTML=`
