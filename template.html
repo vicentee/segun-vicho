@@ -198,7 +198,7 @@ const ANA=[];for(let d=0;d<ND;d++){ANA[d]={};KEYS.forEach(k=>ANA[d][k]=analyse(k
 const bestOf=(d,from)=>{let b=null;KEYS.forEach(k=>{const a=from!=null?analyse(k,d,from):ANA[d][k];if(a&&(!b||a.score>b.score))b=a});return b};
 const G=new Date(Date.parse(DATA.generated_utc)+OFF*1000).toISOString().slice(0,16);
 document.getElementById("meta").textContent=`act. ${G.slice(8,10)}/${G.slice(5,7)} ${G.slice(11)}`;
-if(nowIdx>NH-30){const s=document.getElementById("stale");s.hidden=false;s.textContent=`Datos del ${G.slice(8,10)}/${G.slice(5,7)}: ya están viejos. La actualización programada corre a las 12:00 y a las 00:00.`}
+if(Date.now()-Date.parse(DATA.generated_utc)>12*36e5||nowIdx>NH-30){const s=document.getElementById("stale");s.hidden=false;s.textContent=`Datos del ${G.slice(8,10)}/${G.slice(5,7)} ${G.slice(11)}: tienen más de 12 horas. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`}
 
 /* ——— vocabulario de playa ——— */
 const sizeWord=f=>f<.5?["chico","a la rodilla"]:f<.8?["medio metro","a la cintura"]:f<1.15?["un metro","al pecho"]:f<1.6?["metro y medio","a la cabeza"]:f<2.2?["dos metros","sobre la cabeza"]:["grande","de doble para arriba"];
@@ -351,5 +351,5 @@ function renderWhy(){
 
 renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
-document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias; revisa la cámara antes de manejar. Se actualiza a las 12:00 y a las 00:00.`;
+document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias; revisa la cámara antes de manejar. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`;
 </script>

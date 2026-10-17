@@ -19,7 +19,7 @@ Todo está en [`build.py`](build.py) (datos) y [`template.html`](template.html) 
 
 ## Actualización
 
-Una GitHub Action reconstruye `index.html` a las 00:15 y 12:15 (hora de Chile) y cada vez que cambia `web.json`.
+Cuatro veces al día (00:00, 06:00, 12:00 y 18:00, hora de Chile) una tarea lee los sitios web, actualiza `web.json` y reconstruye `index.html`. Como respaldo, una GitHub Action reconstruye la página 15 minutos después de cada horario y cada vez que cambia `web.json`.
 
 ```bash
 python3 -I build.py template.html web.json index.html
