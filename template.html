@@ -44,6 +44,9 @@ header .clock{color:var(--ink);font-size:12px;display:inline-flex;align-items:ce
 header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block}
 @media (prefers-reduced-motion:no-preference){header .clock i{animation:pulse 2s ease-in-out infinite}}
 @keyframes pulse{50%{opacity:.25}}
+.nowp{transform-box:fill-box;transform-origin:center;opacity:0}
+@media (prefers-reduced-motion:no-preference){.nowp{animation:ping 1.8s ease-out infinite}}
+@keyframes ping{0%{transform:scale(1);opacity:.45}100%{transform:scale(2.8);opacity:0}}
 /* 1 · decidir */
 .verdict{display:flex;flex-direction:column;gap:14px}
 .status{font-family:var(--f-head);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:3px;align-self:flex-start}
@@ -242,7 +245,7 @@ const dayCL=new Intl.DateTimeFormat("es-CL",{timeZone:"America/Santiago",day:"nu
 function ago(ms){const m=Math.round(ms/6e4);return m<1?"recién":m<60?`hace ${m} min`:m<1440?`hace ${Math.floor(m/60)} h${m%60?" "+(m%60)+" min":""}`:`hace ${Math.floor(m/1440)} d`}
 function tick(){const now=new Date(),gen=new Date(DATA.generated_utc),same=dayCL.format(now)===dayCL.format(gen);
   document.getElementById("meta").innerHTML=`<span class="clock"><i></i>${fmtCL.format(now)}</span><span class="upd">datos ${fmtCL.format(gen)}${same?"":" del "+dayCL.format(gen)} · ${ago(now-gen)}</span>`}
-tick();setInterval(tick,30000);
+tick();setInterval(()=>{tick();refreshNow()},30000);
 if(Date.now()-Date.parse(DATA.generated_utc)>12*36e5||nowIdx>NH-30){const s=document.getElementById("stale");s.hidden=false;s.textContent=`Datos del ${G.slice(8,10)}/${G.slice(5,7)} ${G.slice(11)}: tienen más de 12 horas. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`}
 
 /* ——— vocabulario de playa ——— */
@@ -361,11 +364,23 @@ function chart(key,d){
   g+=`<polyline points="${rng.map(h=>`${X(h)},${Y3(S.tide[idx(h)]??0)}`).join(" ")}" fill="none" stroke="var(--base)" stroke-width="1.4"/>`;
   tidesOn(key,d).filter(t=>t.h>=h0+.5&&t.h<=h1-.5).forEach(t=>g+=lab(X(t.h),t.type==="alta"?Y3(t.ht)-4:Y3(t.ht)+12,`${t.type==="alta"?"alta":"baja"} ${hhmm(t.h)}`,"middle","var(--ink)"));
   for(let h=6;h<=21;h+=3) g+=lab(X(h),H-3,h+"h","middle","var(--ink)");
+  // ahora: punto que late sobre la ola, solo si el gráfico es de hoy (se mueve con el reloj)
+  g+=`<g class="nowg" pointer-events="none">${nowMark(key,d,X,Y1,L1,L3)}</g>`;
   // guía y zona sensible para el globo de datos
   g+=`<line class="guide" x1="0" x2="0" y1="0" y2="${L3[1]}" stroke="var(--ink)" stroke-width="1" opacity="0"/><circle class="gdot" r="4" cx="0" cy="0" fill="var(--blue)" stroke="var(--bg)" stroke-width="2" opacity="0"/>`;
   g+=`<rect class="hit" x="${x0}" y="0" width="${x1-x0}" height="${H}" fill="transparent"/>`;
   return `<div class="chart" data-k="${key}" data-d="${d}" data-x0="${x0}" data-x1="${x1}" data-h0="${h0}" data-h1="${h1}" data-max="${maxS}" data-l1="${L1.join(",")}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ola, viento y marea por hora en ${P.name}">${g}</svg><div class="tip" hidden></div></div>`;
 }
+function nowMark(key,d,X,Y1,L1,L3){
+  const h=(Date.now()-T0)/36e5-d*24;if(h<5||h>21) return "";
+  const S=DATA.spots[key].sh,i=d*24+Math.floor(h),f=h%1,v=(S[i]||0)+((S[i+1]??S[i])-(S[i]||0))*f,x=X(h),y=Y1(v);
+  const near=x<X(5)+30,lx=near?x+6:x;
+  return `<line x1="${x}" x2="${x}" y1="9" y2="${L3[1]}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="1 3" opacity=".45"/>`+
+    `<circle class="nowp" cx="${x}" cy="${y}" r="5" fill="var(--ink)"/><circle cx="${x}" cy="${y}" r="4" fill="var(--ink)" stroke="var(--bg)" stroke-width="1.5"/>`+
+    `<text x="${lx}" y="${L1[1]+11}" text-anchor="${near?"start":"middle"}" font-size="10" font-weight="600" fill="var(--ink)" stroke="var(--bg)" stroke-width="3" paint-order="stroke" font-family="IBM Plex Mono">ahora ${fmtCL.format(new Date())}</text>`}
+function refreshNow(){document.querySelectorAll(".chart").forEach(c=>{const k=c.dataset.k,d=+c.dataset.d,g=c.querySelector(".nowg");if(!g) return;
+  const x0=+c.dataset.x0,x1=+c.dataset.x1,h0=+c.dataset.h0,h1=+c.dataset.h1,[a,b]=c.dataset.l1.split(",").map(Number),mx=+c.dataset.max;
+  g.innerHTML=nowMark(k,d,h=>x0+(h-h0)/(h1-h0)*(x1-x0),v=>b-v/mx*(b-a),[a,b],[174,204])})}
 /* globo de datos al pasar el dedo o el mouse sobre el gráfico */
 function tipHTML(k,i){const x=hourly(k,i),ww=windWord(x.ws,x.wd,k),S=DATA.spots[k],tr=tideTrend(k,i);
   return `<div class="tip-h"><b>${hhmm(i%24)}</b><span class="lvl l${lvl(x.score)}">${lvlName(x.score)}</span></div>
