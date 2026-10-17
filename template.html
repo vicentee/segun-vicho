@@ -1,0 +1,355 @@
+<title>Según Vicho</title>
+<meta name="description" content="Reporte de surf para Matanzas, Puertecillo y Topocalma: mediana de 15 fuentes, actualizado dos veces al día.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Cuatro capas: decidir (veredicto) → planificar (semana) → detalle (solo el spot elegido) → verificar (cerrado). Azul = dato, gris = referencia, ámbar = acción, rojo apagado = maral. */
+:root{
+  --bg:#FFFFFF; --panel:#F4F6F8; --ink:#0D1B26; --muted:#5E6B75; --grid:#E2E7EB; --base:#9AA6AF;
+  --blue:#1D4ED8; --blue2:#93B4F5; --amber:#F5B700; --amberInk:#3A2B00; --maral:#C2533A; --ok:#0F7B5A;
+  --c0:#EEF1F4; --c1:#C9D8F6; --c2:#8FB0F0; --c3:#3F72E3; --c4:#1A3FA8;
+  --f-head:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1117; --panel:#151C24; --ink:#E6EBEF; --muted:#8C99A4; --grid:#232D37; --base:#5B6874;
+  --blue:#7AA2FF; --blue2:#33508F; --amber:#FFC72C; --amberInk:#2A1F00; --maral:#E07A61; --ok:#3CC79A;
+  --c0:#1A222B; --c1:#1F3460; --c2:#2C4F9A; --c3:#4C7BEA; --c4:#9DBBFF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1117; --panel:#151C24; --ink:#E6EBEF; --muted:#8C99A4; --grid:#232D37; --base:#5B6874;
+  --blue:#7AA2FF; --blue2:#33508F; --amber:#FFC72C; --amberInk:#2A1F00; --maral:#E07A61; --ok:#3CC79A;
+  --c0:#1A222B; --c1:#1F3460; --c2:#2C4F9A; --c3:#4C7BEA; --c4:#9DBBFF; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 56px;display:flex;flex-direction:column;gap:32px}
+.k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h2{font-family:var(--f-head);font-weight:600;font-size:19px;margin:0 0 10px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+header h1{font-family:var(--f-head);font-weight:700;font-size:26px;margin:0;line-height:1.05;letter-spacing:.005em}
+header .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+header .meta{font-size:11.5px;color:var(--muted);font-family:var(--f-mono)}
+/* 1 · decidir */
+.verdict{display:flex;flex-direction:column;gap:14px}
+.status{font-family:var(--f-head);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:3px;align-self:flex-start}
+.st-go{background:var(--amber);color:var(--amberInk)} .st-maybe{box-shadow:inset 0 0 0 1.5px var(--ink)} .st-no{background:var(--panel);color:var(--muted)}
+.verdict h2.line{font-size:clamp(28px,8vw,40px);line-height:1.05;font-weight:700;margin:0;text-wrap:balance}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);padding-bottom:10px}
+.facts div{padding:10px 10px 0 0;min-width:0}
+.facts div+div{padding-left:12px;border-left:1px solid var(--grid)}
+.facts b{display:block;font-family:var(--f-head);font-size:19px;font-weight:600;line-height:1.15;white-space:nowrap}
+@media (max-width:440px){.facts{grid-template-columns:repeat(2,1fr)}.facts div:nth-child(3){border-left:0;padding-left:0}.facts div:nth-child(n+3){margin-top:8px;border-top:1px solid var(--grid)}}
+.facts span{font-size:12px;color:var(--muted)}
+.expect{font-size:15px;margin:0;max-width:60ch}
+.tramos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tramos li{display:grid;grid-template-columns:92px 78px 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--grid);font-size:13.5px}
+.tramos li .h{font-family:var(--f-mono);font-size:12.5px}
+.tramos li.now{background:color-mix(in srgb,var(--amber) 18%,transparent)}
+.tramos .lvl{justify-self:start}
+.aside{font-size:14px;margin:0;color:var(--muted)} .aside b{color:var(--ink)}
+/* 2 · semana */
+.mx table{border-collapse:separate;border-spacing:2px;width:100%;table-layout:fixed}
+.mx th{font-weight:500;font-size:11.5px;color:var(--muted);text-align:center;padding:0 0 3px}
+.mx th.d b{display:block;font-family:var(--f-head);font-size:16px;color:var(--ink);font-weight:600}
+.mx th.s{text-align:left;font-family:var(--f-head);font-size:13px;color:var(--ink);font-weight:600;width:70px}
+.mx td{padding:0}
+.cell{width:100%;min-height:58px;border:0;border-radius:4px;padding:5px 1px;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;gap:1px}
+.cell b{font-family:var(--f-mono);font-size:13.5px;font-weight:600}
+.cell small{font-family:var(--f-mono);font-size:9.5px;opacity:.85;white-space:nowrap}
+.cell.best{box-shadow:inset 0 0 0 2.5px var(--amber)}
+.cell.sel{outline:2px solid var(--ink);outline-offset:1px}
+.cell:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l0{background:var(--c0);color:var(--muted)} .l1{background:var(--c1);color:var(--ink)} .l2{background:var(--c2);color:#0B1A3A} .l3{background:var(--c3);color:#fff} .l4{background:var(--c4);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .l3,:root:not([data-theme="light"]) .l4{color:#0C1117}:root:not([data-theme="light"]) .l2{color:#E6EBEF}}
+:root[data-theme="dark"] .l3,:root[data-theme="dark"] .l4{color:#0C1117} :root[data-theme="dark"] .l2{color:#E6EBEF}
+.scale{display:flex;gap:4px 12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
+.scale i{width:12px;height:12px;border-radius:2px;display:inline-block;vertical-align:-2px;margin-right:4px}
+/* 3 · detalle */
+.day{display:flex;flex-direction:column;gap:12px}
+.day h3{font-family:var(--f-head);font-size:24px;font-weight:700;margin:0;line-height:1.05}
+.day .sum{font-size:14.5px;margin:0}
+.lvl{font-family:var(--f-head);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.chart svg{display:block;width:100%;height:auto}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.trio b{display:block;font-family:var(--f-head);font-size:17px;font-weight:600;line-height:1.2}
+.trio span{font-size:12px;color:var(--muted)}
+.wtag{font-weight:600}
+.nw{white-space:nowrap}
+.arr{width:.85em;height:.85em;vertical-align:-.08em;margin-right:3px;display:inline-block}
+.arr.w-good{color:var(--ok)} .arr.w-mid{color:var(--muted)} .arr.w-bad{color:var(--maral)}
+.w-good{color:var(--ok)} .w-mid{color:var(--muted)} .w-bad{color:var(--maral)}
+.others{display:flex;flex-direction:column;border-top:1px solid var(--grid)}
+.others details{border-bottom:1px solid var(--grid)}
+.others summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:88px 1fr auto;gap:10px;align-items:center;padding:10px 0;font-size:14px}
+.others summary::-webkit-details-marker{display:none}
+.others summary strong{font-family:var(--f-head);font-size:16px}
+.others summary span.t{color:var(--muted);min-width:0}
+.others .inner{padding:4px 0 14px;display:flex;flex-direction:column;gap:10px}
+details.more>summary{list-style:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--blue)}
+details.more>summary::-webkit-details-marker{display:none}
+details.more p{margin:8px 0 0;font-size:13.5px;max-width:62ch}
+.links{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;margin-top:8px}
+.links a{color:var(--blue)}
+/* 4 · verificar */
+.why>summary{list-style:none;cursor:pointer;font-family:var(--f-head);font-weight:600;font-size:19px;display:flex;justify-content:space-between;align-items:baseline}
+.why>summary::-webkit-details-marker{display:none}
+.why>summary small{font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--blue)}
+.why[open]>summary small .o{display:none} .why:not([open])>summary small .c{display:none}
+.why .body{display:flex;flex-direction:column;gap:14px;font-size:13.5px;margin-top:12px}
+.why .body p{margin:0;max-width:62ch}
+.src{font-size:12.5px;color:var(--muted)}
+.warn{border-left:3px solid var(--amber);background:var(--panel);padding:10px 12px;font-size:13px}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);padding-top:12px}
+</style>
+<div class="wrap">
+  <header><div><h1>Según Vicho</h1><div class="sub">Reporte de surf · Matanzas, Puertecillo, Topocalma</div></div><div class="meta" id="meta"></div></header>
+  <div id="stale" class="warn" hidden></div>
+  <section class="verdict" id="verdict" aria-live="polite"></section>
+  <section>
+    <h2>La semana</h2>
+    <p class="aside" style="margin:-4px 0 10px">Puntaje de la mejor ventana, hora y ola en la rompiente. Toca una celda para ver el día.</p>
+    <div class="mx" id="mx"></div>
+    <div class="scale"><span><i class="l0"></i>no pasa</span><span><i class="l1"></i>igual sale</span><span><i class="l2"></i>bueno</span><span><i class="l3"></i>épico</span><span><i style="background:transparent;box-shadow:inset 0 0 0 2.5px var(--amber)"></i>mejor del día</span></div>
+  </section>
+  <section class="day" id="day"></section>
+  <details class="why"><summary>Por qué esta recomendación <small><span class="o">ver</span><span class="c">cerrar</span></small></summary><div class="body" id="whyBody"></div></details>
+  <footer id="foot"></footer>
+</div>
+<script>
+const DATA = __DATA__;
+const SPOTS = {
+  mat:{name:"Matanzas",face:290,k:0.85,lo:0.9,hi:2.0,min:0.45,max:3.0,tidePref:0.15,orient:"O–ONO (Mar Blanco)",subs:"Mar Blanco · la punta · beach break",
+    style:"Izquierda de punta sobre roca y beach break en A frente a Mar Blanco, que mira al oeste. Pared amable con 1–1,5 m (tabla media o long); con más tamaño la punta se pone rápida y hueca. Ventana de swell angosta (SO–O). El viento SO entra fuerte después del mediodía: la sesión real es temprano.",
+    tideNote:"Marea media; en baja la roca de la punta queda expuesta.",
+    links:[["Wisuki","https://es.wisuki.com/forecast/4253/matanzas"],["Lineup · Mar Blanco","https://lineup.surf/es/spots/chile/o-higgins/matanzas/mar-blanco-1810"],["Breakfinder","https://breakfinder.surf/en/surf_spots/matanzas"],["Windguru","https://www.windguru.cz/42511"],["Surf-forecast","https://www.surf-forecast.com/breaks/Matanzas/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/matanzas/5842041f4e65fad6a7708cc3"]]},
+  pue:{name:"Puertecillo",face:310,k:0.8,lo:1.0,hi:2.3,min:0.6,max:3.2,tidePref:0.0,orient:"N en la punta, O en la playa",subs:"La punta · Tumán",
+    style:"Izquierda larga de punta con fondo de arena, nivel intermedio, de las más largas del país. Recibe menos swell que los spots expuestos pero llega más ordenado al dar la vuelta. La punta mira al norte: el S–SO entra cruzado-terral y aguanta mejor que Matanzas a media mañana. El norte prefrontal la deja maral. Ojo con la resaca.",
+    tideNote:"Baja a media subiendo suele dar las secciones más largas.",
+    links:[["Wisuki","https://es.wisuki.com/forecast/6652/puertecillo"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/litueche/puertecillo-1807"],["Swellnet","https://www.swellnet.com/forecasts/chile/o-higgins/puertecillo"],["Breakfinder","https://breakfinder.surf/en/surf_spots/puertecillo"],["Surf-forecast","https://www.surf-forecast.com/breaks/Puertecillo/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/puertecillo/5842041f4e65fad6a7708cc0"]]},
+  top:{name:"Topocalma",face:320,k:1.0,lo:1.3,hi:3.5,min:0.8,max:5.0,tidePref:0.3,orient:"NO (Piedra del Viento) a N (El Secreto)",subs:"Punta · Piedra del Viento · El Secreto",
+    style:"Punta izquierda expuesta y potente sobre roca: recibe más tamaño que Puertecillo y Matanzas. Ola rápida y pesada, para nivel avanzado. Aguanta swell grande; es la opción cuando el resto se cierra. Con viento S, El Secreto (mira al N) es el más protegido.",
+    tideNote:"Media a alta suaviza la roca; en baja se pone más tubera y peligrosa.",
+    links:[["Lineup · Piedra del Viento","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/piedra-del-viento-11050"],["Lineup · El Secreto","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/el-secreto-11051"],["Windguru","https://www.windguru.cz/42514"],["Surf-forecast","https://www.surf-forecast.com/breaks/Punta-Topocalma/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/punta-topocalma/640a4d5c4519054c85a024bd"]]}
+};
+const KEYS=["mat","pue","top"];
+const DIAS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"], DIAS_L=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const D0=DATA.start, OFF=DATA.tz_offset_s??-10800;   // primer día (YYYY-MM-DD) y offset de Chile en segundos
+const T0=Date.UTC(+D0.slice(0,4),+D0.slice(5,7)-1,+D0.slice(8,10))-OFF*1000; // 00:00 hora Chile de ese día
+const NH=DATA.spots.mat.sh.length, ND=Math.floor(NH/24);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const C16=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const es16=d=>d==null?"–":C16[Math.round(((d%360)+360)%360/22.5)%16];
+const hhmm=h=>{h=((h%24)+24)%24;const H=Math.floor(h),M=Math.round((h-H)*60);return String(H+(M===60?1:0)).padStart(2,"0")+":"+String(M%60).padStart(2,"0")};
+const toH=s=>{const [a,b]=s.split(":");return +a+b/60};
+const dDate=d=>new Date(T0+d*864e5), dKey=d=>dDate(d).toISOString().slice(0,10);
+const dName=d=>DIAS[dDate(d).getUTCDay()], dNum=d=>dDate(d).getUTCDate(), dLong=d=>DIAS_L[dDate(d).getUTCDay()];
+const fm=m=>m==null?"–":m.toFixed(1).replace(".",",");
+
+/* ——— vocabulario local del viento ——— */
+function windQ(dir,key){const off=(SPOTS[key].face+180)%360;const dl=Math.abs((((dir-off)%360)+540)%360-180);
+  return dl<35?1:dl<70?.85:dl<100?.6:dl<135?.35:.15}
+function windWord(s,dir,key){if(s<6) return ["calmo","w-good"];const q=windQ(dir,key);
+  return q>=.95?["terral","w-good"]:q>=.85?["cruzado-terral","w-good"]:q>=.6?["cruzado","w-mid"]:q>=.3?["cruzado-maral","w-bad"]:["maral","w-bad"]}
+function swellDirQ(d){return d>=215&&d<250?1:d>=250&&d<265?.9:d>=190&&d<215?.8:d>=265&&d<290?.65:.4}
+function secValid(S,i){return S.h2[i]!=null&&S.p2[i]>=12&&S.d2[i]>=190&&S.d2[i]<=290&&S.h2[i]>=.3}
+
+function hourly(key,i){
+  const S=DATA.spots[key],P=SPOTS[key];
+  const sh=S.sh[i]||0,sp=S.sp[i]||0,sec=secValid(S,i),h2=sec?S.h2[i]:0,p2=sec?S.p2[i]:0;
+  const e1=sh*sh,e2=h2*h2,heff=Math.sqrt(e1+e2),teff=(e1*sp+e2*p2)/Math.max(e1+e2,1e-6);
+  const face=heff*P.k*clamp(.75+.035*(teff-10),.75,1.3);
+  const sw=P.lo+.6*(P.hi-P.lo);const size=face<P.min?.05:face<P.lo?.25+.45*(face-P.min)/(P.lo-P.min):face<sw?.7+.3*(face-P.lo)/(sw-P.lo):face<=P.hi?1:face<=P.max?1-.5*(face-P.hi)/(P.max-P.hi):.3;
+  const per=clamp((teff-9)/9,.2,1),dq=swellDirQ(S.sd[i]);
+  const ws=S.ws[i]??0,wd=S.wd[i]??0,q=windQ(wd,key);
+  let wf=ws<=6?1:1-(1-q)*Math.min(1,(ws-6)/14); if(ws>20) wf*=Math.max(.5,1-(ws-20)/40);
+  const chop=clamp(1-(S.ww[i]||0)*.35,.6,1), tf=1-.15*Math.min(1,Math.abs((S.tide[i]??0)-P.tidePref)/.5);
+  const score=clamp(10*size*(.45+.55*per)*dq*wf*chop*tf*.97,0,10);
+  const lo=S.shLo?.[i]??sh, hi=S.shHi?.[i]??sh;
+  return {key,i,score,face,heff,teff,sh,sp,sd:S.sd[i],h2,p2,d2:S.d2[i],sec,ws,wd,wg:S.wg[i],tide:S.tide[i],kw:.49*.9*(e1*sp+e2*p2),
+    ta:S.ta[i],cc:S.cc[i],pr:S.pr[i],sst:S.sst[i],lo,hi,wsLo:S.wsLo?.[i]??ws,wsHi:S.wsHi?.[i]??ws,nW:S.nW?.[i]||1,nV:S.nV?.[i]||1};
+}
+function daylight(key,d){const s=DATA.spots[key].sun[dKey(d)];return s?[toH(s[0]),toH(s[1])]:[7,20]}
+function analyse(key,d,from=0){
+  const [sr,ss]=daylight(key,d),hrs=[];
+  for(let h=Math.max(Math.ceil(sr-.25),Math.ceil(from));h<=Math.floor(ss-.75);h++) hrs.push(hourly(key,d*24+h));
+  if(!hrs.length) return null;
+  let best=null;
+  for(let j=0;j<hrs.length;j++){const a=hrs[j],b=hrs[j+1]||a,v=(a.score+b.score)/2;if(!best||v>best.v) best={v,start:a.i%24,end:(b.i%24)+1,a,b}}
+  const peak=hrs.reduce((m,x)=>x.score>m.score?x:m,hrs[0]);
+  return {key,d,hrs,best,peak,score:best.v};
+}
+const lvl=s=>s<2.5?0:s<4.5?1:s<6.5?2:s<8.3?3:4;
+const lvlWord=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
+function confidence(x){const rel=(x.hi-x.lo)/Math.max(x.sh,.3),wsr=x.wsHi-x.wsLo;
+  return rel<.28&&wsr<9?["alta","las fuentes coinciden"]:rel<.5&&wsr<15?["media","las fuentes difieren algo"]:["baja","las fuentes no se ponen de acuerdo"]}
+function board(x,key){ // según tamaño en la rompiente, potencia y qué tan limpio está
+  const f=x.face,clean=windQ(x.wd,key)>=.85||x.ws<6,soft=x.kw<14;
+  if(f<.6) return "el longboard";
+  if(f<.9) return key==="pue"&&clean?"el longboard":clean?"una tabla corta con pan":"una tabla de espuma media";
+  if(f<1.3) return soft||!clean?"una tabla corta con pan":"una tabla corta de performance";
+  return "una tabla corta de performance";
+}
+function tidesOn(key,d){return DATA.spots[key].tides.map(t=>({day:Math.floor(t.m/1440),h:(t.m%1440)/60,ht:t.h,type:t.type})).filter(t=>t.day===d)}
+
+/* ——— tiempo y análisis ——— */
+const nowIdx=(Date.now()-T0)/36e5, curDay=clamp(Math.floor(nowIdx/24),0,ND-1);
+const ANA=[];for(let d=0;d<ND;d++){ANA[d]={};KEYS.forEach(k=>ANA[d][k]=analyse(k,d))}
+const bestOf=(d,from)=>{let b=null;KEYS.forEach(k=>{const a=from!=null?analyse(k,d,from):ANA[d][k];if(a&&(!b||a.score>b.score))b=a});return b};
+const G=new Date(Date.parse(DATA.generated_utc)+OFF*1000).toISOString().slice(0,16);
+document.getElementById("meta").textContent=`act. ${G.slice(8,10)}/${G.slice(5,7)} ${G.slice(11)}`;
+if(nowIdx>NH-30){const s=document.getElementById("stale");s.hidden=false;s.textContent=`Datos del ${G.slice(8,10)}/${G.slice(5,7)}: ya están viejos. La actualización programada corre a las 12:00 y a las 00:00.`}
+
+/* ——— vocabulario de playa ——— */
+const sizeWord=f=>f<.5?["chico","a la rodilla"]:f<.8?["medio metro","a la cintura"]:f<1.15?["un metro","al pecho"]:f<1.6?["metro y medio","a la cabeza"]:f<2.2?["dos metros","sobre la cabeza"]:["grande","de doble para arriba"];
+const cap=t=>t[0].toUpperCase()+t.slice(1);
+const cleanWord=x=>{const w=windWord(x.ws,x.wd,x.key)[0];return ["calmo","terral","cruzado-terral"].includes(w)?"limpio":w==="cruzado"?"con textura":"desordenado"};
+const lvlName=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
+const mr=f=>`${fm(f*.85)}–${fm(f*1.15)} m`;
+const periodWord=t=>t<10?"olas seguidas y cortas":t<13?"series normales":"series espaciadas y con fuerza";
+function tideTrend(key,i){const S=DATA.spots[key],a=S.tide[i],b=S.tide[i+1];return a==null||b==null?"":b>a?"marea subiendo":"marea bajando"}
+function segments(key,d){ // agrupa las horas con luz en tramos de estado parecido
+  const [sr,ss]=daylight(key,d),out=[];
+  for(let h=Math.ceil(sr-.25);h<=Math.floor(ss-.5);h++){const x=hourly(key,d*24+h),L=Math.min(lvl(x.score),2),c=cleanWord(x),id=L+"|"+(L===0?"":c);
+    const last=out[out.length-1];if(last&&last.id===id){last.end=h+1;last.xs.push(x)}else out.push({id,L,c,start:h,end:h+1,xs:[x]})}
+  return out.map(sg=>{const ws=Math.round(sg.xs.reduce((m,x)=>m+x.ws,0)/sg.xs.length),f=sg.xs.reduce((m,x)=>m+x.face,0)/sg.xs.length,w=windWord(ws,sg.xs[0].wd,key)[0];
+    const tp=Math.round(sg.xs.reduce((m,x)=>m+x.teff,0)/sg.xs.length);
+    const wd0=sg.xs[Math.floor(sg.xs.length/2)].wd,wc=windWord(ws,wd0,key)[1];
+    const txt=`${mr(f)} · ${tp} s · <span class="nw">${arrow(wd0,wc)}${ws} km/h</span> <span class="wtag ${wc}">${w}</span>`;
+    return {...sg,txt}});
+}
+function secondWindow(key,d,a){ // otra ventana surfeable separada al menos 3 h de la principal
+  let b=null;for(const x of a.hrs){const h=x.i%24;if(Math.abs(h-a.best.start)<3&&Math.abs(h-(a.best.end-1))<3) continue;if(lvl(x.score)>=1&&cleanWord(x)!=="desordenado"&&(!b||x.score>b.score))b=x}
+  return b}
+function spoilAt(key,d,fromH){const [,ss]=daylight(key,d);for(let h=Math.ceil(fromH);h<=Math.floor(ss);h++){const x=hourly(key,d*24+h);if((windWord(x.ws,x.wd,key)[1]==="w-bad"&&x.ws>=12)||x.ws>=22) return h}return null}
+
+const arrow=(wd,cls="")=>wd==null?"":`<svg class="arr ${cls}" viewBox="0 0 16 16" aria-label="viento del ${es16(wd)}" style="transform:rotate(${(wd+180)%360}deg)"><path d="M8 1.5 L13 13 L8 10.2 L3 13 Z" fill="currentColor"/></svg>`;
+function metrics(x,k){const ww=windWord(x.ws,x.wd,k);
+  return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
+    <div><b>${Math.round(x.teff)} s</b><span>período</span></div>
+    <div><b>${Math.round(x.kw)} kW/m</b><span>potencia</span></div>
+    <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>`}
+
+/* ——— 1 · decidir ——— */
+let verdictDay=curDay, verdictKey=null;
+function renderVerdict(){
+  const hNow=nowIdx-curDay*24;let d=curDay,when="Hoy";
+  let b=nowIdx>=0&&nowIdx<NH?bestOf(curDay,hNow+.5):null;
+  if(!b||b.hrs.length<2){d=Math.min(curDay+1,ND-1);when=d===curDay+1?"Mañana":dLong(d);b=bestOf(d)}
+  verdictDay=d;verdictKey=b.key;
+  const x=b.best.a,L=lvl(b.score),P=SPOTS[b.key],sz=sizeWord(x.face),sp=spoilAt(b.key,d,b.best.end),cf=confidence(x);
+  const st=[["No pasa","st-no"],["Igual sale","st-maybe"],["Bueno","st-maybe"],["Épico","st-go"],["Épico","st-go"]][L];
+  const line=L>=1?`${when}: ${P.name}, ${hhmm(b.best.start)}–${hhmm(b.best.end)}.`:`${when}: no pasa.`;
+  let wk=null;for(let dd=curDay;dd<ND;dd++){const z=bestOf(dd);if(!wk||z.score>wk.score)wk=z}
+  const better=wk&&wk.d!==d&&lvl(wk.score)>L?` El mejor día de la semana es el <b>${dLong(wk.d)} ${dNum(wk.d)}</b> en ${SPOTS[wk.key].name}.`:"";
+  document.getElementById("verdict").innerHTML=`
+    <span class="status ${st[1]}">${st[0]}</span>
+    <h2 class="line">${line}</h2>
+    <div class="facts">${metrics(x,b.key)}</div>
+    <p class="aside" style="margin-top:-4px">Peak a las <b>${hhmm(b.peak.i%24)}</b> · ${sp!=null?`se ensucia a las <b>${hhmm(sp)}</b>`:"no se ensucia en el día"}.</p>
+    <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)} (${Math.round(x.teff)} s), ${tideTrend(b.key,x.i)}. Lleva ${board(x,b.key)}.${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
+    <p class="aside">Confianza <b>${cf[0]}</b>.${better}</p>`;
+}
+
+/* ——— 2 · semana ——— */
+let selDay=curDay, selKey=null;
+function renderMatrix(){
+  const days=[];for(let d=curDay;d<ND;d++)days.push(d);
+  let h=`<table><thead><tr><th class="s"></th>${days.map(d=>`<th class="d">${dName(d)}<b>${dNum(d)}</b></th>`).join("")}</tr></thead><tbody>`;
+  KEYS.forEach(k=>{h+=`<tr><th class="s" scope="row">${SPOTS[k].name}</th>`+days.map(d=>{const a=ANA[d][k],b=bestOf(d),best=b.key===k&&lvl(a.score)>=1,sel=d===selDay&&k===(selKey||b.key);
+    return `<td><button class="cell l${lvl(a.score)}${best?" best":""}${sel?" sel":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}, ${a.score.toFixed(1)}, a las ${hhmm(a.best.start)}"><b>${a.score.toFixed(1)}</b><small>${hhmm(a.best.start).slice(0,2)}h</small><small>${fm(a.best.a.face)} m</small></button></td>`}).join("")+`</tr>`});
+  document.getElementById("mx").innerHTML=h+`</tbody></table>`;
+  document.querySelectorAll(".cell").forEach(c=>c.onclick=()=>{selDay=+c.dataset.d;selKey=c.dataset.k;renderMatrix();renderDay();document.getElementById("day").scrollIntoView({behavior:"smooth",block:"start"})});
+}
+
+/* ——— 3 · detalle ——— */
+function chart(key,d){
+  const S=DATA.spots[key],P=SPOTS[key],a=ANA[d][key],[sr,ss]=daylight(key,d);
+  const W=540,x0=8,x1=W-8,h0=5,h1=21,X=h=>x0+(h-h0)/(h1-h0)*(x1-x0);
+  const L1=[24,88],L2=[100,146],L3=[162,192],H=210,idx=h=>d*24+h,rng=[];for(let h=h0;h<=h1;h++)rng.push(h);
+  const maxS=Math.max(2,...rng.map(h=>S.sh[idx(h)]||0))*1.2,Y1=v=>L1[1]-v/maxS*(L1[1]-L1[0]);
+  const lab=(x,y,t,anchor="start",c="var(--muted)")=>`<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="10" fill="${c}" font-family="IBM Plex Mono">${t}</text>`;
+  let g=`<rect x="${X(h0)}" y="0" width="${Math.max(0,X(sr)-X(h0))}" height="${L3[1]}" fill="var(--panel)"/><rect x="${X(ss)}" y="0" width="${Math.max(0,X(h1)-X(ss))}" height="${L3[1]}" fill="var(--panel)"/>`;
+  if(a) g+=`<rect x="${X(a.best.start)}" y="0" width="${X(a.best.end)-X(a.best.start)}" height="${L3[1]+3}" fill="var(--amber)" opacity=".3"/>`;
+  const cw=(x1-x0)/(h1-h0);rng.forEach(h=>{if(h===h1) return;const L=lvl(hourly(key,idx(h)).score),night=h<Math.floor(sr)||h>=Math.ceil(ss);
+    g+=`<rect x="${X(h)+.5}" y="0" width="${cw-1}" height="7" rx="1.5" fill="var(--c${L})" opacity="${night?.25:1}"/>`});
+  // swell: línea + umbral
+  const minSw=P.min/P.k;
+  g+=`<line x1="${x0}" x2="${x1}" y1="${Y1(minSw)}" y2="${Y1(minSw)}" stroke="var(--base)" stroke-dasharray="2 3"/>`+lab(x1,Y1(minSw)-3,"rompe desde aquí","end");
+  g+=lab(x0,L1[0]-5,"ola");
+  g+=`<polyline points="${rng.map(h=>`${X(h)},${Y1(S.sh[idx(h)]||0)}`).join(" ")}" fill="none" stroke="var(--blue)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if(a){const pk=a.peak.i%24;g+=`<circle cx="${X(pk)}" cy="${Y1(S.sh[idx(pk)])}" r="4" fill="var(--bg)" stroke="var(--blue)" stroke-width="2"/>`}
+  // viento: barras por color; número solo dentro de la ventana
+  g+=lab(x0,L2[0]-3,"viento");
+  const maxW=Math.max(30,...rng.map(h=>S.ws[idx(h)]||0)),bw=(x1-x0)/(h1-h0)*.6;
+  rng.forEach(h=>{if(h===h1) return;const ws=S.ws[idx(h)]||0,wd=S.wd[idx(h)]||0,c=windWord(ws,wd,key)[1],col=c==="w-good"?"var(--ok)":c==="w-bad"?"var(--maral)":"var(--muted)";
+    g+=`<g transform="translate(${X(h)},${L2[0]+6}) rotate(${(wd+180)%360})"><path d="M0 -5.5 L4 5 L0 2.6 L-4 5 Z" fill="${col}"><title>${hhmm(h)} · del ${es16(wd)} ${Math.round(ws)} km/h</title></path></g>`});
+  rng.forEach(h=>{const ws=S.ws[idx(h)]||0,c=windWord(ws,S.wd[idx(h)]||0,key)[1],col=c==="w-good"?"var(--ok)":c==="w-bad"?"var(--maral)":"var(--base)",hh=Math.max(1.5,ws/maxW*(L2[1]-L2[0]-22));
+    g+=`<rect x="${X(h)-bw/2}" y="${L2[1]-hh}" width="${bw}" height="${hh}" fill="${col}"/>`;
+    if(a&&h>=a.best.start&&h<a.best.end) g+=lab(X(h),L2[1]-hh-3,Math.round(ws),"middle","var(--ink)")});
+  // marea
+  const tv=rng.map(h=>S.tide[idx(h)]).filter(v=>v!=null),tmin=Math.min(...tv,-.5),tmax=Math.max(...tv,.7),Y3=v=>L3[1]-(v-tmin)/(tmax-tmin)*(L3[1]-L3[0]);
+  g+=lab(x0,L3[0]-3,"marea");
+  g+=`<polyline points="${rng.map(h=>`${X(h)},${Y3(S.tide[idx(h)]??0)}`).join(" ")}" fill="none" stroke="var(--base)" stroke-width="1.4"/>`;
+  tidesOn(key,d).filter(t=>t.h>=h0+.5&&t.h<=h1-.5).forEach(t=>g+=lab(X(t.h),t.type==="alta"?Y3(t.ht)-4:Y3(t.ht)+12,`${t.type==="alta"?"alta":"baja"} ${hhmm(t.h)}`,"middle","var(--ink)"));
+  for(let h=6;h<=21;h+=3) g+=lab(X(h),H-3,h+"h","middle","var(--ink)");
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ola, viento y marea por hora en ${P.name}">${g}</svg></div>`;
+}
+const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>terral</span><span><i style="background:var(--base)"></i>cruzado</span><span><i style="background:var(--maral)"></i>maral</span><span>flecha: hacia dónde sopla</span></div>`;
+function trio(k,a){const x=a.best.a;
+  return `<div class="facts">${metrics(x,k)}</div><p class="aside">Ventana <b>${hhmm(a.best.start)}–${hhmm(a.best.end)}</b> · swell ${fm(x.sh)} m ${es16(x.sd)} · lleva ${board(x,k)}.</p>`}
+function more(k){const P=SPOTS[k];return `<details class="more"><summary>Cómo rompe ${P.name}</summary><p>${P.style}</p><p><b>Marea:</b> ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
+function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
+  const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
+  return `${mr(x.face)} · ${Math.round(x.teff)} s · <span class="nw">${arrow(x.wd,windWord(x.ws,x.wd,k)[1])}${Math.round(x.ws)} km/h</span> · ${hhmm(a.best.start)}`}
+function renderDay(){
+  const d=selDay,mainK=selKey||bestOf(d).key,a=ANA[d][mainK],P=SPOTS[mainK],x=a.best.a,sp=spoilAt(mainK,d,a.best.end);
+  const sum=lvl(a.score)>=1?`${mr(x.face)}, mar ${cleanWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
+  const others=KEYS.filter(k=>k!==mainK).sort((p,q)=>ANA[d][q].score-ANA[d][p].score);
+  document.getElementById("day").innerHTML=`
+    <div class="k">${dLong(d)} ${dNum(d)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${P.name}</h3><span class="lvl l${lvl(a.score)}">${lvlName(a.score)}</span></div>
+    <p class="sum">${sum}</p>
+    ${chart(mainK,d)}${legend}
+    <ol class="tramos">${segments(mainK,d).map(sg=>`<li class="${sg.start<=a.best.start&&sg.end>a.best.start?"now":""}"><span class="h">${hhmm(sg.start)}–${hhmm(sg.end)}</span><span class="lvl l${sg.L}">${lvlName(sg.xs.reduce((m,x)=>Math.max(m,x.score),0))}</span><span>${sg.txt}</span></li>`).join("")}</ol>
+    ${trio(mainK,a)}
+    ${more(mainK)}
+    <div class="others">${others.map(k=>{const o=ANA[d][k];return `<details><summary><strong>${SPOTS[k].name}</strong><span class="t">${compare(k,a)}</span><span class="lvl l${lvl(o.score)}">${lvlName(o.score)}</span></summary>
+      <div class="inner">${chart(k,d)}${trio(k,o)}${more(k)}</div></details>`}).join("")}</div>`;
+  renderWhy();
+}
+
+/* ——— 4 · verificar ——— */
+function spread(k,d){const a=ANA[d][k];if(!a) return "";const S=DATA.spots[k],i=a.peak.i;
+  const row=(src,cut,med,unit,f,lo,hi,label)=>{const ent=Object.entries(src).filter(([,v])=>v[i]!=null);if(ent.length<2) return "";
+    const vals=ent.map(([,v])=>v[i]),mn=Math.min(lo,...vals),mx=Math.max(hi,...vals),pad=(mx-mn)*.1||.1,A=mn-pad,B=mx+pad,W=520,x0=110,x1=W-14,X=v=>x0+(v-A)/(B-A)*(x1-x0);
+    let g=`<text x="0" y="16" font-size="11" fill="var(--ink)" font-family="IBM Plex Sans" font-weight="600">${label}</text>`;
+    g+=`<line x1="${x0}" x2="${x1}" y1="12" y2="12" stroke="var(--grid)"/><rect x="${X(lo)}" y="6" width="${Math.max(1,X(hi)-X(lo))}" height="12" fill="var(--blue2)" opacity=".5" rx="2"/>`;
+    g+=`<line x1="${X(med)}" x2="${X(med)}" y1="2" y2="22" stroke="var(--blue)" stroke-width="2"/>`;
+    ent.forEach(([s,v])=>{const c=(cut[s]||[]).includes(i);g+=`<circle cx="${X(v[i])}" cy="12" r="4.5" fill="${c?"var(--bg)":"var(--ink)"}" stroke="${c?"var(--maral)":"var(--bg)"}" stroke-width="${c?2:1}"><title>${s}: ${f(v[i])} ${unit}${c?" · descartada":""}</title></circle>`});
+    g+=`<text x="${x0}" y="36" font-size="9.5" fill="var(--muted)" font-family="IBM Plex Mono">${f(A)}</text><text x="${x1}" y="36" text-anchor="end" font-size="9.5" fill="var(--muted)" font-family="IBM Plex Mono">${f(B)} ${unit}</text>`;
+    const cuts=ent.filter(([s])=>(cut[s]||[]).includes(i)).map(([s,v])=>`${s} ${f(v[i])}`);
+    return `<svg viewBox="0 0 ${W} 40" style="width:100%;display:block">${g}</svg>${cuts.length?`<div class="src" style="margin:-2px 0 6px 0">Descartada${cuts.length>1?"s":""}: ${cuts.join(", ")}</div>`:""}`};
+  return `<div><div class="k" style="margin-bottom:4px">Qué dice cada fuente a las ${hhmm(i%24)} · línea = mediana, banda = rango usado, ○ = descartada</div><div class="chart">
+    ${row(S.srcSh||{},S.cutSh||{},S.sh[i],"m",v=>fm(v),S.shLo?.[i]??S.sh[i],S.shHi?.[i]??S.sh[i],"Swell")}
+    ${row(S.srcWs||{},S.cutWs||{},S.ws[i],"km/h",v=>Math.round(v),S.wsLo?.[i]??S.ws[i],S.wsHi?.[i]??S.ws[i],"Viento")}</div></div>`}
+function srcLine(k,d){const A=(DATA.spots[k].audit||{})[dKey(d)]||[];if(!A.length) return "";
+  const used=A.filter(x=>x.used>0).length,cut=A.filter(x=>x.cut>0&&x.cut/(x.used+x.cut)>=.25);
+  return `<div class="src"><b>${used} fuentes</b> en la mediana${cut.length?` · descartadas parte del día: ${cut.map(x=>`${x.src} (${Math.round(100*x.cut/(x.used+x.cut))}%)`).join(", ")}`:" · ninguna descartada"}</div>`}
+
+function renderWhy(){
+  const d=selDay,k=selKey||bestOf(d).key,a=ANA[d][k],x=a.best.a,cf=confidence(x),M=DATA.spots[k].models||{};
+  const web=[...new Set(KEYS.flatMap(kk=>(DATA.spots[kk].models||{}).web||[]))];
+  document.getElementById("whyBody").innerHTML=`
+    <p><b>Confianza ${cf[0]}:</b> ${cf[1]}. Para ${SPOTS[k].name} a las ${hhmm(a.peak.i%24)}, el swell va de ${fm(x.lo)} a ${fm(x.hi)} m según la fuente (mediana ${fm(x.sh)} m, ${Math.round(x.sp)} s) y el viento de ${Math.round(x.wsLo)} a ${Math.round(x.wsHi)} km/h.</p>
+    ${spread(k,d)}
+    ${srcLine(k,d)}
+    <p><b>Método.</b> Cada hora junta todos los modelos y sitios, descarta los valores que se alejan demasiado del resto (más de 2,5 MAD, con tope de 40% en altura, 30% en período y 50% en viento) y recomienda con la <b>mediana</b> de lo que queda.</p>
+    <p><b>Puntaje.</b> Tamaño estimado en la rompiente (swell × factor del spot × período) contra el rango ideal de cada punta, período, dirección del swell, viento según la orientación de cada punta, mar de viento y marea. "Se ensucia" es la primera hora después de la ventana con viento maral de 12 km/h o más, o cualquier viento sobre 22 km/h.</p>
+    <p><b>Fuentes.</b> Oleaje: ${(M.wave||[]).join(", ")}. Viento: ${(M.wind||[]).join(", ")}. Sitios: ${web.join(", ")||"ninguno legible en esta corrida"}.${(M.failed||[]).length?` Sin respuesta: ${M.failed.join(", ")}.`:""}</p>`;
+}
+
+renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
+const sst=DATA.spots.mat.sst.find(v=>v!=null);
+document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias; revisa la cámara antes de manejar. Se actualiza a las 12:00 y a las 00:00.`;
+</script>
