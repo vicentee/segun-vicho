@@ -32,7 +32,12 @@ header .logo svg{display:block;width:140px;height:auto}
 header .hd{text-align:right;min-width:0}
 header .t{font-family:var(--f-head);font-weight:600;font-size:17px;line-height:1.1}
 header .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
-header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-top:4px}
+header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-top:4px;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+header .upd{white-space:nowrap}
+header .clock{color:var(--ink);font-size:12px;display:inline-flex;align-items:center;gap:5px}
+header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block}
+@media (prefers-reduced-motion:no-preference){header .clock i{animation:pulse 2s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.25}}
 /* 1 · decidir */
 .verdict{display:flex;flex-direction:column;gap:14px}
 .status{font-family:var(--f-head);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:3px;align-self:flex-start}
@@ -216,7 +221,13 @@ const nowIdx=(Date.now()-T0)/36e5, curDay=clamp(Math.floor(nowIdx/24),0,ND-1);
 const ANA=[];for(let d=0;d<ND;d++){ANA[d]={};KEYS.forEach(k=>ANA[d][k]=analyse(k,d))}
 const bestOf=(d,from)=>{let b=null;KEYS.forEach(k=>{const a=from!=null?analyse(k,d,from):ANA[d][k];if(a&&(!b||a.score>b.score))b=a});return b};
 const G=new Date(Date.parse(DATA.generated_utc)+OFF*1000).toISOString().slice(0,16);
-document.getElementById("meta").textContent=`act. ${G.slice(8,10)}/${G.slice(5,7)} ${G.slice(11)}`;
+/* reloj en vivo y antigüedad de los datos, en hora de Chile */
+const fmtCL=new Intl.DateTimeFormat("es-CL",{timeZone:"America/Santiago",hour:"2-digit",minute:"2-digit",hour12:false});
+const dayCL=new Intl.DateTimeFormat("es-CL",{timeZone:"America/Santiago",day:"numeric",month:"numeric"});
+function ago(ms){const m=Math.round(ms/6e4);return m<1?"recién":m<60?`hace ${m} min`:m<1440?`hace ${Math.floor(m/60)} h${m%60?" "+(m%60)+" min":""}`:`hace ${Math.floor(m/1440)} d`}
+function tick(){const now=new Date(),gen=new Date(DATA.generated_utc),same=dayCL.format(now)===dayCL.format(gen);
+  document.getElementById("meta").innerHTML=`<span class="clock"><i></i>${fmtCL.format(now)}</span><span class="upd">datos ${fmtCL.format(gen)}${same?"":" del "+dayCL.format(gen)} · ${ago(now-gen)}</span>`}
+tick();setInterval(tick,30000);
 if(Date.now()-Date.parse(DATA.generated_utc)>12*36e5||nowIdx>NH-30){const s=document.getElementById("stale");s.hidden=false;s.textContent=`Datos del ${G.slice(8,10)}/${G.slice(5,7)} ${G.slice(11)}: tienen más de 12 horas. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`}
 
 /* ——— vocabulario de playa ——— */
@@ -435,5 +446,5 @@ function renderWhy(){setTimeout(bindSrows,0);
 
 renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
-document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias; revisa la cámara antes de manejar. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`;
+document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`;
 </script>
