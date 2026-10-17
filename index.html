@@ -1,4 +1,4 @@
-<title>Según Miapá</title>
+<title>Según Vicho</title>
 <meta name="description" content="Reporte de surf para Matanzas, Puertecillo y Topocalma: mediana de 15 fuentes, actualizado dos veces al día.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,11 +35,13 @@ header .meta{font-size:11.5px;color:var(--muted);font-family:var(--f-mono)}
 .status{font-family:var(--f-head);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:3px;align-self:flex-start}
 .st-go{background:var(--amber);color:var(--amberInk)} .st-maybe{box-shadow:inset 0 0 0 1.5px var(--ink)} .st-no{background:var(--panel);color:var(--muted)}
 .verdict h2.line{font-size:clamp(28px,8vw,40px);line-height:1.05;font-weight:700;margin:0;text-wrap:balance}
-.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);padding-bottom:10px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);padding-bottom:10px}
 .facts div{padding:10px 10px 0 0;min-width:0}
 .facts div+div{padding-left:12px;border-left:1px solid var(--grid)}
 .facts b{display:block;font-family:var(--f-head);font-size:19px;font-weight:600;line-height:1.15;white-space:nowrap}
-@media (max-width:440px){.facts{grid-template-columns:repeat(2,1fr)}.facts div:nth-child(3){border-left:0;padding-left:0}.facts div:nth-child(n+3){margin-top:8px;border-top:1px solid var(--grid)}}
+.facts div:nth-child(3n+1){border-left:0;padding-left:0}
+.facts div:nth-child(n+4){border-top:1px solid var(--grid)}
+@media (max-width:440px){.facts b{font-size:17px}}
 .facts span{font-size:12px;color:var(--muted)}
 .expect{font-size:15px;margin:0;max-width:60ch}
 .tramos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -104,7 +106,7 @@ details.more p{margin:8px 0 0;font-size:13.5px;max-width:62ch}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);padding-top:12px}
 </style>
 <div class="wrap">
-  <header><div><h1>Según Miapá</h1><div class="sub">Reporte de surf · Matanzas, Puertecillo, Topocalma</div></div><div class="meta" id="meta"></div></header>
+  <header><div><h1>Según Vicho</h1><div class="sub">Reporte de surf · Matanzas, Puertecillo, Topocalma</div></div><div class="meta" id="meta"></div></header>
   <div id="stale" class="warn" hidden></div>
   <section class="verdict" id="verdict" aria-live="polite"></section>
   <section>
@@ -227,11 +229,13 @@ function spoilAt(key,d,fromH){const [,ss]=daylight(key,d);for(let h=Math.ceil(fr
 
 const arrow=(wd,cls="")=>wd==null?"":`<svg class="arr ${cls}" viewBox="0 0 16 16" aria-label="viento del ${es16(wd)}" style="transform:rotate(${(wd+180)%360}deg)"><path d="M8 1.5 L13 13 L8 10.2 L3 13 Z" fill="currentColor"/></svg>`;
 const sarrow=sd=>sd==null?"":`<svg class="arr sw" viewBox="0 0 16 16" aria-label="swell del ${es16(sd)}" style="transform:rotate(${(sd+180)%360}deg)"><path d="M8 1 L12.5 7 L9.6 7 L9.6 15 L6.4 15 L6.4 7 L3.5 7 Z" fill="currentColor"/></svg>`;
-function metrics(x,k){const ww=windWord(x.ws,x.wd,k);
-  return `<div><b>${sarrow(x.sd)}${mr(x.face)}</b><span>ola · swell del ${es16(x.sd)}</span></div>
+function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
+  return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
+    <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
     <div><b>${Math.round(x.teff)} s</b><span>período</span></div>
     <div><b>${Math.round(x.kw)} kW/m</b><span>potencia</span></div>
-    <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>`}
+    <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>
+    ${extra?`<div><b>${extra[0]}</b><span>${extra[1]}</span></div>`:""}`}
 
 /* ——— 1 · decidir ——— */
 let verdictDay=curDay, verdictKey=null;
@@ -248,8 +252,8 @@ function renderVerdict(){
   document.getElementById("verdict").innerHTML=`
     <span class="status ${st[1]}">${st[0]}</span>
     <h2 class="line">${line}</h2>
-    <div class="facts">${metrics(x,b.key)}</div>
-    <p class="aside" style="margin-top:-4px">Peak a las <b>${hhmm(b.peak.i%24)}</b> · ${sp!=null?`se ensucia a las <b>${hhmm(sp)}</b>`:"no se ensucia en el día"}.</p>
+    <div class="facts">${metrics(x,b.key,[sp!=null?hhmm(sp):"no",sp!=null?"se ensucia":"se ensucia en el día"])}</div>
+    <p class="aside" style="margin-top:-4px">Peak de la ola a las <b>${hhmm(b.peak.i%24)}</b>.</p>
     <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)} (${Math.round(x.teff)} s), ${tideTrend(b.key,x.i)}. Lleva ${board(x,b.key)}.${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
     <p class="aside">Confianza <b>${cf[0]}</b>.${better}</p>`;
 }
@@ -302,7 +306,7 @@ function chart(key,d){
 }
 const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>terral</span><span><i style="background:var(--base)"></i>cruzado</span><span><i style="background:var(--maral)"></i>maral</span><span>flechas: hacia dónde van el swell (azul) y el viento</span></div>`;
 function trio(k,a){const x=a.best.a;
-  return `<div class="facts">${metrics(x,k)}</div><p class="aside">Ventana <b>${hhmm(a.best.start)}–${hhmm(a.best.end)}</b> · swell ${fm(x.sh)} m ${es16(x.sd)} · lleva ${board(x,k)}.</p>`}
+  return `<div class="facts">${metrics(x,k,[`${hhmm(a.best.start)}–${hhmm(a.best.end)}`,"ventana"])}</div><p class="aside">Lleva ${board(x,k)}.</p>`}
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Cómo rompe ${P.name}</summary><p>${P.style}</p><p><b>Marea:</b> ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
