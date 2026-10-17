@@ -20,7 +20,7 @@
 :root{
   --bg:#FFFFFF; --panel:#F4F6F8; --ink:#0D1B26; --muted:#5E6B75; --grid:#E2E7EB; --base:#9AA6AF;
   --blue:#1D4ED8; --blue2:#93B4F5; --amber:#F5B700; --amberInk:#3A2B00; --maral:#C2533A; --ok:#0F7B5A;
-  --c0:#EEF1F4; --c1:#C9D8F6; --c2:#8FB0F0; --c3:#3F72E3; --c4:#1A3FA8;
+  --pino:#5E8A55; --pino2:#3F6B40; --sol:#F0913A; --c0:#EEF1F4; --c1:#C9D8F6; --c2:#8FB0F0; --c3:#3F72E3; --c4:#1A3FA8;
   --f-head:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -28,20 +28,23 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0C1117; --panel:#151C24; --ink:#E6EBEF; --muted:#8C99A4; --grid:#232D37; --base:#5B6874;
   --blue:#7AA2FF; --blue2:#33508F; --amber:#FFC72C; --amberInk:#2A1F00; --maral:#E07A61; --ok:#3CC79A;
-  --c0:#1A222B; --c1:#1F3460; --c2:#2C4F9A; --c3:#4C7BEA; --c4:#9DBBFF; color-scheme:dark}}
+  --pino:#7FAA72; --pino2:#557F4E; --sol:#FF9E4A; --c0:#1A222B; --c1:#1F3460; --c2:#2C4F9A; --c3:#4C7BEA; --c4:#9DBBFF; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0C1117; --panel:#151C24; --ink:#E6EBEF; --muted:#8C99A4; --grid:#232D37; --base:#5B6874;
   --blue:#7AA2FF; --blue2:#33508F; --amber:#FFC72C; --amberInk:#2A1F00; --maral:#E07A61; --ok:#3CC79A;
-  --c0:#1A222B; --c1:#1F3460; --c2:#2C4F9A; --c3:#4C7BEA; --c4:#9DBBFF; color-scheme:dark}
+  --pino:#7FAA72; --pino2:#557F4E; --sol:#FF9E4A; --c0:#1A222B; --c1:#1F3460; --c2:#2C4F9A; --c3:#4C7BEA; --c4:#9DBBFF; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 .wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 56px;display:flex;flex-direction:column;gap:32px}
 .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 h2{font-family:var(--f-head);font-weight:600;font-size:19px;margin:0 0 10px}
-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px}
-header h1{font-family:var(--f-head);font-weight:700;font-size:26px;margin:0;line-height:1.05;letter-spacing:.005em}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+header .logo{margin:0;line-height:0;flex:none}
+header .logo svg{display:block;width:140px;height:auto}
+header .hd{text-align:right;min-width:0}
+header .t{font-family:var(--f-head);font-weight:600;font-size:17px;line-height:1.1}
 header .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
-header .meta{font-size:11.5px;color:var(--muted);font-family:var(--f-mono)}
+header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-top:4px}
 /* 1 · decidir */
 .verdict{display:flex;flex-direction:column;gap:14px}
 .status{font-family:var(--f-head);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:3px;align-self:flex-start}
@@ -118,7 +121,26 @@ details.more p{margin:8px 0 0;font-size:13.5px;max-width:62ch}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);padding-top:12px}
 </style>
 <div class="wrap">
-  <header><div><h1>Según Vicho</h1><div class="sub">Reporte de surf · Matanzas, Puertecillo, Topocalma</div></div><div class="meta" id="meta"></div></header>
+  <header><h1 class="logo"><svg viewBox="0 0 124 58" width="124" height="58" role="img" aria-label="Según Vicho">
+  <defs>
+    <linearGradient id="lgx" x1="0" x2="1"><stop offset="0" stop-color="#fff"/><stop offset=".58" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="lgy" x1="0" y1="0" x2="0" y2="1"><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="lmw" maskUnits="userSpaceOnUse" x="0" y="0" width="124" height="58"><rect width="124" height="58" fill="url(#lgx)"/></mask>
+    <mask id="lml" maskUnits="userSpaceOnUse" x="0" y="0" width="124" height="58"><rect width="124" height="58" fill="url(#lgy)"/></mask>
+  </defs>
+  <g mask="url(#lml)">
+    <path d="M0 58 L0 22 Q4 14 12 12.5 Q22 11 28 18 Q34 26 40 33 Q43 37 38 39 Q24 44 0 58 Z" fill="var(--pino)"/>
+    <path d="M28 18 Q34 26 40 33 Q43 37 38 39 Q33 31 26 21 Z" fill="var(--pino2)"/>
+    <path d="M3.4 14.6 L6 8.8 L8.6 14 Z M8.4 13.2 L11.2 6.6 L14 12.6 Z M13.6 12.8 L16.4 7.4 L19.2 12.8 Z" fill="var(--pino)"/>
+  </g>
+  <path d="M37 38.2 Q40.5 36.6 42.6 38.6 Q40.6 40.6 37.4 40 Z" fill="var(--pino2)"/>
+  <g mask="url(#lmw)" fill="none" stroke="var(--blue)" stroke-width="2.6" stroke-linecap="round">
+    <path d="M39 42.5 Q66 34.5 126 38.5"/>
+    <path d="M42 49 Q70 41 126 45" opacity=".62"/>
+    <path d="M45 55.5 Q74 47.5 126 51.5" opacity=".34"/>
+  </g>
+  <circle cx="99" cy="14" r="5" fill="var(--sol)"/>
+</svg></h1><div class="hd"><div class="t">Reporte de surf</div><div class="sub">Matanzas · Puertecillo · Topocalma</div><div class="meta" id="meta"></div></div></header>
   <div id="stale" class="warn" hidden></div>
   <section class="verdict" id="verdict" aria-live="polite"></section>
   <section>
