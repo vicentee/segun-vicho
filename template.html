@@ -538,5 +538,5 @@ function renderWhy(){setTimeout(bindSrows,0);
 
 renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
-document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00.`;
+document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00, o cuando Vicente cambia algo en el diseño de este reporte.`;
 </script>
