@@ -48,16 +48,13 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 @media (prefers-reduced-motion:no-preference){.nowp{animation:ping 1.8s ease-out infinite}}
 @keyframes ping{0%{transform:scale(1);opacity:.45}100%{transform:scale(2.8);opacity:0}}
 /* cambios del pronóstico */
-.chg table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;margin-top:6px}
-.chg th,.chg td{text-align:left;vertical-align:top;padding:7px 8px 7px 0;border-top:1px solid var(--grid)}
-.chg thead th{border-top:0;font-weight:500;font-size:11.5px;color:var(--muted);padding-top:0}
-.chg thead th:first-child,.chg tbody th{width:92px}
-.chg tbody th{font-family:var(--f-head);font-size:14px;font-weight:600}
-.chg td b{font-family:var(--f-mono);font-size:13px;font-weight:600;white-space:nowrap}
-.chg td i{display:block;font-style:normal;font-size:12px;color:var(--ink)}
-.chg td small{display:block;font-size:11.5px;color:var(--muted);line-height:1.3;margin-top:1px}
-.chg .up b{color:var(--ok)} .chg .down b{color:var(--maral)} .chg .eq b,.chg .na{color:var(--muted)}
-.chg .na{font-size:12px}
+.chg ul{list-style:none;margin:6px 0 0;padding:0}
+.chg li{padding:7px 0;border-top:1px solid var(--grid);font-size:14px}
+.chg li b{font-family:var(--f-head);font-weight:600}
+.chg .up{color:var(--ok);font-weight:600} .chg .down{color:var(--maral);font-weight:600}
+.chg .ago{color:var(--muted);font-size:12.5px}
+.chg small{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}
+.chg0{margin-top:-6px}
 /* 1 · decidir */
 .verdict{display:flex;flex-direction:column;gap:14px}
 .status{font-family:var(--f-head);font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:3px;align-self:flex-start}
@@ -311,24 +308,29 @@ function oldSpot(h,k){const cur=DATA.spots[k],o=h.spots[k];if(!o) return null;
   const off=Math.round((Date.parse(h.start)-Date.parse(DATA.start))/36e5),S=Object.assign({},cur);
   Object.keys(o).forEach(f=>{S[f]=cur[f].map((_,i)=>o[f][i-off]??null)});return S}
 function withSpot(k,S,fn){const cur=DATA.spots[k];DATA.spots[k]=S;try{return fn()}finally{DATA.spots[k]=cur}}
-function changeCell(k,d,from,ref){
-  if(!ref) return `<td class="na">sin datos aún</td>`;
-  const a=analyse(k,d,from),S=oldSpot(ref.h,k);if(!a||!S||S.sh[a.best.a.i]==null) return `<td class="na">–</td>`;
-  const o=withSpot(k,S,()=>analyse(k,d,from));if(!o) return `<td class="na">–</td>`;
-  const ds=a.score-o.score,cls=ds>=.4?"up":ds<=-.4?"down":"eq";
+function changeOf(k,d,from,ref){
+  if(!ref) return null;
+  const a=analyse(k,d,from),S=oldSpot(ref.h,k);if(!a||!S||S.sh[a.best.a.i]==null) return null;
+  const o=withSpot(k,S,()=>analyse(k,d,from));if(!o) return null;
+  const ds=a.score-o.score;if(Math.abs(ds)<.4) return null;
   // por qué: lo que más cambió a la hora de la ventana actual
   const x=a.best.a,y=withSpot(k,S,()=>hourly(k,x.i)),df=x.face-y.face,dw=x.ws-y.ws,dt=x.teff-y.teff,sg=v=>v>0?"+":"−",why=[];
+  if(lvl(o.score)!==lvl(a.score)) why.push(`de ${lvlName(o.score)} a ${lvlName(a.score)}`);
   if(Math.abs(df)>=.15) why.push(`ola ${sg(df)}${fm(Math.abs(df))} m`);
   if(Math.abs(dw)>=4) why.push(`viento ${sg(dw)}${Math.round(Math.abs(dw))} km/h`);
   if(Math.abs(dt)>=1.5) why.push(`período ${sg(dt)}${Math.round(Math.abs(dt))} s`);
-  const lv=lvl(o.score)!==lvl(a.score)?`<i>de ${lvlName(o.score)} a ${lvlName(a.score)}</i>`:"";
-  const mark=cls==="up"?"▲":cls==="down"?"▼":"=";
-  return `<td class="${cls}"><b>${mark} ${cls==="eq"?"igual":sg(ds)+fm(Math.abs(ds))}</b>${lv}${why.length?`<small>${why.join(" · ")}</small>`:""}</td>`}
+  return {up:ds>0,ago:Math.round(ref.ag),why}}
+/* solo lo que cambió; si nada cambió, una línea */
 function changes(d,from){
-  const r6=histNear(6,3),r24=histNear(24,6);if(!r6&&!r24) return "";
-  const when=d===curDay?"hoy":d===curDay+1?"mañana":dLong(d);
-  return `<div class="chg"><div class="k">Cómo cambió el pronóstico para ${when}</div><table><thead><tr><th></th><th>vs hace ${r6?Math.round(r6.ag):6} h</th><th>vs hace ${r24?Math.round(r24.ag):24} h</th></tr></thead><tbody>${
-    KEYS.map(k=>`<tr><th scope="row">${SPOTS[k].name}</th>${changeCell(k,d,from,r6)}${changeCell(k,d,from,r24)}</tr>`).join("")}</tbody></table></div>`}
+  const refs=[histNear(6,3),histNear(24,6)].filter(Boolean);if(!refs.length) return "";
+  const when=d===curDay?"hoy":d===curDay+1?"mañana":dLong(d),rows=[];
+  KEYS.forEach(k=>{const c=refs.map(r=>changeOf(k,d,from,r)).filter(Boolean);if(!c.length) return;
+    // si las dos comparaciones van en el mismo sentido, basta la más reciente
+    const show=c.length===2&&c[0].up===c[1].up?[c[0]]:c;
+    show.forEach(x=>rows.push(`<li><b>${SPOTS[k].name}</b> <span class="${x.up?"up":"down"}">${x.up?"▲ mejoró":"▼ empeoró"}</span> <span class="ago">vs hace ${x.ago} h</span>${x.why.length?`<small>${x.why.join(" · ")}</small>`:""}</li>`))});
+  const span=refs.length>1?`${Math.round(refs[1].ag)} h`:`${Math.round(refs[0].ag)} h`;
+  return rows.length?`<div class="chg"><div class="k">Cambios en el pronóstico para ${when}</div><ul>${rows.join("")}</ul></div>`
+    :`<p class="aside chg0">Pronóstico estable: sin cambios en las últimas ${span}.</p>`}
 
 /* ——— 1 · decidir ——— */
 let verdictDay=curDay, verdictKey=null;
@@ -412,10 +414,8 @@ function chart(key,d){
 function nowMark(key,d,X,Y1,L1,L3){
   const h=(Date.now()-T0)/36e5-d*24;if(h<5||h>21) return "";
   const S=DATA.spots[key].sh,i=d*24+Math.floor(h),f=h%1,v=(S[i]||0)+((S[i+1]??S[i])-(S[i]||0))*f,x=X(h),y=Y1(v);
-  const near=x<X(5)+30,lx=near?x+6:x;
   return `<line x1="${x}" x2="${x}" y1="9" y2="${L3[1]}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="1 3" opacity=".45"/>`+
-    `<circle class="nowp" cx="${x}" cy="${y}" r="5" fill="var(--ink)"/><circle cx="${x}" cy="${y}" r="4" fill="var(--ink)" stroke="var(--bg)" stroke-width="1.5"/>`+
-    `<text x="${lx}" y="${L1[1]+11}" text-anchor="${near?"start":"middle"}" font-size="10" font-weight="600" fill="var(--ink)" stroke="var(--bg)" stroke-width="3" paint-order="stroke" font-family="IBM Plex Mono">ahora ${fmtCL.format(new Date())}</text>`}
+    `<circle class="nowp" cx="${x}" cy="${y}" r="5" fill="var(--ink)"/><circle cx="${x}" cy="${y}" r="4" fill="var(--ink)" stroke="var(--bg)" stroke-width="1.5"/>`}
 function refreshNow(){document.querySelectorAll(".chart").forEach(c=>{const k=c.dataset.k,d=+c.dataset.d,g=c.querySelector(".nowg");if(!g) return;
   const x0=+c.dataset.x0,x1=+c.dataset.x1,h0=+c.dataset.h0,h1=+c.dataset.h1,[a,b]=c.dataset.l1.split(",").map(Number),mx=+c.dataset.max;
   g.innerHTML=nowMark(k,d,h=>x0+(h-h0)/(h1-h0)*(x1-x0),v=>b-v/mx*(b-a),[a,b],[174,204])})}
