@@ -10,6 +10,7 @@ Reporte de surf para **Matanzas, Puertecillo y Topocalma** (VI Región, Chile). 
 - **Cómo cambió:** si el pronóstico de cada spot mejoró o empeoró respecto de la corrida de hace 6 y 24 horas, y por qué (ola, viento o período).
 - **La semana:** puntaje, hora y tamaño por spot y día. El borde ámbar marca el mejor de cada día. Los días 8 a 10 son tendencia.
 - **El día:** gráfico hora a hora de ola, swell, viento y marea, con un punto que marca la hora actual. Debajo, los tramos del día y los otros spots.
+- **Preguntar (?):** chat que responde con el mismo pronóstico: cómo viene la semana, qué día y spot conviene, y qué tabla usar (tipo, largo, ancho y litros) según estatura, peso, nivel y tablas que usas. Son reglas, sin servidor ni IA externa.
 - **Por qué:** qué dijo cada fuente, cuáles se descartaron y la confianza de la recomendación.
 
 ## Cómo calcula

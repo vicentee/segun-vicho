@@ -151,6 +151,31 @@ details.more p{margin:8px 0 0;font-size:13.5px;max-width:62ch}
 .src{font-size:12.5px;color:var(--muted)}
 .warn{border-left:3px solid var(--amber);background:var(--panel);padding:10px 12px;font-size:13px}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);padding-top:12px}
+/* ——— chat recomendador ——— */
+.ask{position:fixed;right:0;bottom:calc(24vh + env(safe-area-inset-bottom,0px));z-index:40;width:42px;height:46px;border:0;border-radius:12px 0 0 12px;background:var(--ink);color:var(--bg);font:700 22px/1 var(--f-head);box-shadow:-3px 4px 14px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 0 0 2px}
+.chat{position:fixed;z-index:50;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;border:1px solid var(--grid);box-shadow:0 -8px 30px rgba(0,0,0,.18);left:0;right:0;bottom:0;height:min(78vh,640px);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (min-width:900px){.chat{left:auto;top:0;height:100vh;width:400px;border-radius:0;box-shadow:-8px 0 30px rgba(0,0,0,.14)}}
+.chat[hidden],.ask[hidden]{display:none}
+.chat-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--grid)}
+.chat-h b{font-family:var(--f-head);font-size:17px;font-weight:600}
+.chat-h small{display:block;font-size:11.5px;color:var(--muted);font-weight:400;font-family:var(--f-body)}
+.chat-x{border:0;background:var(--panel);color:var(--ink);width:32px;height:32px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer}
+.chat-log{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.msg{max-width:88%;font-size:14.5px;line-height:1.45}
+.msg p{margin:0 0 6px} .msg p:last-child{margin:0}
+.msg ul{margin:4px 0 6px;padding-left:18px} .msg li{margin:2px 0}
+.msg.bot{align-self:flex-start}
+.msg.me{align-self:flex-end;background:var(--ink);color:var(--bg);padding:8px 12px;border-radius:14px 14px 4px 14px}
+.msg .board{border:1px solid var(--grid);border-radius:10px;padding:10px 12px;margin:6px 0}
+.msg .board b{font-family:var(--f-head);font-size:16px}
+.msg .board .dims{font-family:var(--f-mono);font-size:13px;margin-top:2px}
+.msg .muted{color:var(--muted);font-size:12.5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
+.chips button{border:1px solid var(--grid);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 11px;font:500 13px var(--f-body);cursor:pointer}
+.chat-f{display:flex;gap:8px;padding:8px 12px 12px;border-top:1px solid var(--grid)}
+.chat-f input:focus{outline:2px solid var(--blue);outline-offset:1px}
+.chat-f input{flex:1;min-width:0;border:1px solid var(--grid);background:var(--panel);color:var(--ink);border-radius:999px;padding:10px 14px;font:16px var(--f-body)}
+.chat-f button{border:0;background:var(--ink);color:var(--bg);border-radius:999px;padding:0 16px;font:600 14px var(--f-body);cursor:pointer}
 </style>
 <div class="wrap">
   <header><h1 class="logo"><svg viewBox="0 0 140 56" width="140" height="56" role="img" aria-label="Según Vicho"><defs><linearGradient id="lgf" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".18" stop-color="#fff"/><stop offset=".82" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="lmf" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="56"><rect width="140" height="56" fill="url(#lgf)"/></mask></defs><path d="M14.00 42.00 L16.10 38.85 L20.30 36.75 L23.45 37.27 L25.55 33.60 L30.80 31.50 L32.90 28.35 L39.20 27.30 L42.35 24.15 L48.65 23.10 L53.90 21.00 L60.20 21.52 L64.40 19.95 L69.65 21.00 L72.80 23.10 L74.90 25.20 L75.95 31.50 L78.05 35.70 L80.15 34.65 L81.20 29.40 L82.25 23.62 L83.83 18.38 L85.92 14.70 L89.08 12.81 L92.23 13.44 L94.33 16.27 L95.90 21.00 L98.00 27.30 L100.10 33.60 L103.25 38.85 L107.45 42.00 Z" fill="var(--ink)" stroke="var(--ink)" stroke-width=".8" stroke-linejoin="round"/><g mask="url(#lmf)" fill="none" stroke="var(--blue)" stroke-linecap="round"><line x1="2" y1="42.8" x2="138" y2="42.8" stroke-width="1.6"/><line x1="16" y1="49" x2="72" y2="49" stroke-width="2.4" opacity=".6"/><line x1="58" y1="54" x2="118" y2="54" stroke-width="2.4" opacity=".32"/></g></svg></h1><div class="hd"><div class="t">Reporte de surf</div><div class="sub">Matanzas · Puertecillo · Topocalma</div><div class="meta" id="meta"></div></div></header>
@@ -165,6 +190,13 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);paddin
   <section class="day" id="day"></section>
   <details class="why"><summary>Por qué esta recomendación <small><span class="o">ver</span><span class="c">cerrar</span></small></summary><div class="body" id="whyBody"></div></details>
   <footer id="foot"></footer>
+</div>
+<button class="ask" id="askBtn" type="button" aria-haspopup="dialog" aria-label="Preguntar sobre el pronóstico o qué tabla usar" title="Preguntar">?</button>
+<div class="chat" id="chat" role="dialog" aria-label="Preguntar a Según Vicho" hidden>
+  <div class="chat-h"><div><b>Preguntar</b><small>Responde con el pronóstico de esta página</small></div><button class="chat-x" id="chatX" type="button" aria-label="Cerrar">×</button></div>
+  <div class="chat-log" id="chatLog" aria-live="polite"></div>
+  <div class="chips" id="chatChips"></div>
+  <form class="chat-f" id="chatF" autocomplete="off"><input id="chatIn" type="text" placeholder="Ej: mido 1,75, peso 80 kg, nivel medio" aria-label="Tu pregunta" enterkeyhint="send"><button type="submit">Enviar</button></form>
 </div>
 <script>
 const DATA = __DATA__;
@@ -559,6 +591,132 @@ renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
 document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00, o cuando Vicente cambia algo en el diseño de este reporte.`;
 
+/* ——— chat recomendador: reglas sobre el mismo pronóstico (sin servidor ni IA externa) ——— */
+(()=>{
+const $=id=>document.getElementById(id),log=$("chatLog"),chips=$("chatChips"),inp=$("chatIn");
+const norm=t=>t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+let P={};try{P=JSON.parse(localStorage.getItem("svPerfil")||"{}")}catch(_){}
+const save=()=>{try{localStorage.setItem("svPerfil",JSON.stringify(P))}catch(_){}};
+const ev=(p,t)=>{try{window.goatcounter&&goatcounter.count&&goatcounter.count({path:p,title:t||p,event:true})}catch(_){}};
+const LVN={1:"principiante",2:"intermedio",3:"avanzado"};
+const BOARDS={espuma:"espuma",softtop:"espuma",soft:"espuma",longboard:"longboard",long:"longboard",tablon:"longboard",funboard:"evolutiva",evolutiva:"evolutiva",midlength:"evolutiva","mid length":"evolutiva",fish:"fish",pescado:"fish",shortboard:"shortboard",short:"shortboard",corta:"shortboard",gun:"gun"};
+
+/* —— lectura de la pregunta —— */
+function parse(raw){const t=norm(raw),o={};
+  let m=t.match(/(\d)[.,](\d{2})\s*(m|mt|mts|metros?)?\b/);if(m) o.h=+(m[1]+"."+m[2]);
+  if(!o.h&&(m=t.match(/\b(1\d{2}|[89]\d)\s*(cm|centimetros?)\b/))) o.h=+m[1]/100;
+  if(!o.h&&(m=t.match(/mido\s*(1\d{2})\b/))) o.h=+m[1]/100;
+  if((m=t.match(/(\d{2,3})(?:[.,]\d)?\s*(kg|kilos?|kgs)\b/))||(m=t.match(/peso\s*(\d{2,3})\b/))) o.w=+m[1];
+  // "cook"/"kook" es solo "surfista" aquí; el nivel lo da la otra palabra
+  if(/\b(avanzad|experto|pro\b|surfeo bien)/.test(t)) o.lv=3;
+  else if(/\b(medio|intermedi|regular|mas o menos)/.test(t)) o.lv=2;
+  else if(/\b(principiante|novat|empezando|aprendiendo|basico|amateur|primera vez|nunca he)/.test(t)) o.lv=1;
+  const b=[];Object.keys(BOARDS).forEach(k=>{if(new RegExp("\\b"+k).test(t)&&!b.includes(BOARDS[k]))b.push(BOARDS[k])});if(b.length) o.boards=b;
+  if(/\b(nino|nina|hijo|hija|cabro chico|cabra chica|guagua)/.test(t)) o.kid=true;
+  // día
+  if(/pasado manana/.test(t)) o.d=curDay+2; else if(/manana/.test(t)) o.d=curDay+1; else if(/\bhoy\b|ahora|esta tarde|en la tarde/.test(t)) o.d=curDay;
+  else {const di=["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];for(let d=curDay;d<Math.min(ND,curDay+10);d++){if(new RegExp("\\b"+norm(dLong(d))).test(t)){o.d=d;break}}}
+  if(/fin de semana|finde/.test(t)) o.weekend=true;
+  if(/semana|proximos dias|que viene|adelante|pronostico|tendencia|cuando|mejor dia/.test(t)) o.outlook=true;
+  KEYS.forEach(k=>{if(t.includes(norm(SPOTS[k].name).slice(0,6))) o.spot=k});
+  if(/tabla|board|que uso|que llevo|medida|litros|volumen/.test(t)) o.board=true;
+  return o}
+
+/* —— recomendación de tabla —— */
+const ftin=cm=>{const i=Math.round(cm/2.54);return `${Math.floor(i/12)}'${i%12}"`};
+function boardFor(p,x,k){
+  const kid=p.kid||(p.w&&p.w<45)||(p.h&&p.h<1.5),lv=p.lv||1,w=p.w,hcm=Math.round((p.h||1.72)*100);
+  const small=x.face<.9,weak=x.kw<12,big=x.face>=1.6&&x.kw>=30,clean=windQ(x.wd,k)>=.85||x.ws<6;
+  const likes=p.boards||[];let type,why;
+  if(lv===1){type="espuma";why="la más estable para remar y pararte; el volumen te deja agarrar casi cualquier ola"}
+  else if(lv===2){
+    if(big){type="shortboard";why="con este tamaño y fuerza necesitas una tabla que gire y no se clave; si no estás cómodo en ola grande, mejor espera otro día"}
+    else if(small||weak){type=likes.includes("longboard")||(k==="pue"&&clean)?"longboard":"evolutiva";why=type==="longboard"?"ola chica y suave: el largo te deja entrar temprano y planear":"ola chica: el volumen extra te mete en la ola sin perder maniobra"}
+    else{type=likes.includes("shortboard")||likes.includes("fish")?"fish":"evolutiva";why=type==="fish"?"tamaño medio: rema fácil y todavía se puede maniobrar":"tamaño medio: punto justo entre remada y giro"}}
+  else{
+    if(big){type="step-up";why="ola grande y con fuerza: un poco más larga para entrar antes y tener control en la caída"}
+    else if(small||weak){type=likes.includes("longboard")&&clean?"longboard":"fish";why=type==="longboard"?"chico y limpio: día de longboard":"poca fuerza: más ancho y volumen para mantener velocidad"}
+    else{type="shortboard";why="tamaño y fuerza para maniobrar en la pared"}}
+  if(likes.length&&lv<3&&!likes.includes(type)){
+    const pref=likes.includes("longboard")&&(small||weak||lv===2)?"longboard":likes.includes("espuma")&&lv<=2?"espuma":null;
+    if(pref){type=pref;why=pref==="longboard"?"ola manejable para lo que ya usas: el largo te deja entrar temprano":"sigue con lo que te da confianza; el volumen te asegura olas"}}
+  // volumen: peso × factor según nivel, ajustado por el día
+  const gf=kid?{1:1.3,2:.8,3:.6}[lv]:{1:1.0,2:.65,3:.42}[lv];
+  let vol=w?w*gf*(small||weak?1.1:big?.95:1):null;
+  if(type==="longboard") vol=w?Math.max(vol,w*.85):null; if(type==="espuma"&&w) vol=Math.max(vol,w*(kid?1.3:1));
+  // largo según tipo y estatura
+  let L;
+  if(type==="espuma") L=kid?[w&&w<30?168:183,w&&w<30?183:198]:w&&w>85?[274,290]:w&&w<60?[229,244]:[244,274];
+  else if(type==="longboard") L=kid?[229,259]:[274,290];
+  else if(type==="evolutiva") L=kid?[198,213]:[213,244];
+  else if(type==="fish") L=[hcm-8,hcm+3];
+  else if(type==="step-up") L=[hcm+8,hcm+18];
+  else L=[hcm-3,hcm+8];
+  if(kid&&(type==="shortboard"||type==="fish")) L=[hcm+0,hcm+10];
+  const width={espuma:kid?'20–21"':'22–23"',longboard:'22–23"',evolutiva:'21–22"',fish:'20–21½"',shortboard:kid?'17½–18½"':'18½–19½"',"step-up":'18½–19¼"'}[type];
+  const name={espuma:"Tabla de espuma",longboard:"Longboard",evolutiva:"Evolutiva (mid-length)",fish:"Fish",shortboard:"Shortboard","step-up":"Step-up"}[type];
+  return {type,name,why,L:[ftin(L[0]),ftin(L[1])],cm:[Math.round(L[0]),Math.round(L[1])],width,vol:vol?[Math.round(vol*.93),Math.round(vol*1.07)]:null,kid}}
+
+/* —— respuestas —— */
+const day=d=>d===curDay?"hoy":d===curDay+1?"mañana":`el ${dLong(d)} ${dNum(d)}`;
+const lvT=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
+function dayLine(d,k){const a=k?ANA[d][k]:bestOf(d);if(!a) return "";const x=a.best.a,ww=windWord(x.ws,x.wd,a.key)[0];
+  return `<b>${cap(day(d))}</b>: ${lvT(a.score)}${lvl(a.score)>=1?` en ${SPOTS[a.key].name}, ${hhmm(a.best.start)}–${hhmm(a.best.end)}`:""}. ${mr(x.face)}, ${Math.round(x.teff)} s, viento ${Math.round(x.ws)} km/h ${ww}.${TREND(d)?" <span class='muted'>(tendencia)</span>":""}`}
+function outlook(o){
+  const from=o.d!=null?o.d:curDay,to=Math.min(ND,o.weekend?from+7:curDay+7),ds=[];
+  for(let d=from;d<to;d++){if(o.weekend){const wd=dDate(d).getUTCDay();if(wd!==0&&wd!==6) continue}ds.push(d)}
+  if(!ds.length) return "<p>No tengo datos para esos días.</p>";
+  const rank=ds.map(d=>({d,a:o.spot?ANA[d][o.spot]:bestOf(d)})).sort((p,q)=>q.a.score-p.a.score);
+  const top=rank[0],good=rank.filter(r=>lvl(r.a.score)>=2).map(r=>r.d).sort((a,b)=>a-b);
+  const where=o.spot?` en ${SPOTS[o.spot].name}`:"";
+  let h=`<p>${lvl(top.a.score)>=1?`Lo mejor${where}: <b>${day(top.d)}</b>, ${lvT(top.a.score)}${o.spot?"":` en ${SPOTS[top.a.key].name}`}, ${hhmm(top.a.best.start)}–${hhmm(top.a.best.end)}.`:`Viene flojo${where}: ningún día pasa de "no pasa".`}</p>`;
+  if(good.length>1) h+=`<p>Días buenos o mejores: ${good.map(day).join(", ")}.</p>`;
+  // tendencia del swell: compara el primer y último tercio
+  const sw=ds.map(d=>{const a=o.spot?ANA[d][o.spot]:bestOf(d);return a.best.a.face}),n=Math.max(1,Math.floor(sw.length/3)),f0=sw.slice(0,n).reduce((s,v)=>s+v,0)/n,f1=sw.slice(-n).reduce((s,v)=>s+v,0)/n;
+  if(ds.length>=4) h+=`<p>${f1>f0*1.15?"El tamaño viene subiendo hacia el final.":f1<f0*.85?"El tamaño va bajando con los días.":"El tamaño se mantiene parejo."}</p>`;
+  h+=`<ul>${ds.map(d=>`<li>${dayLine(d,o.spot)}</li>`).join("")}</ul>`;
+  if(ds.some(TREND)) h+=`<p class="muted">Los días de tendencia sirven para ver si viene swell, no para elegir la hora.</p>`;
+  return h}
+function boardAnswer(o){
+  const miss=[];if(!P.h)miss.push("estatura");if(!P.w)miss.push("peso");if(!P.lv)miss.push("nivel");
+  if(miss.length) return {html:`<p>Para darte medidas necesito tu ${miss.join(", ").replace(/, ([^,]*)$/," y $1")}.</p><p class="muted">Ejemplo: "mido 1,75, peso 78 kg, nivel medio, uso longboard".</p>`,chips:P.lv?[]:["Soy principiante","Nivel medio","Soy avanzado"]};
+  const d=o.d!=null?o.d:verdictDay,a=o.spot?ANA[d][o.spot]:bestOf(d),k=a.key,x=a.best.a,r=boardFor(P,x,k);
+  let h=`<p>Para <b>${day(d)}</b> en ${SPOTS[k].name} (${mr(x.face)}, ${Math.round(x.teff)} s, ${Math.round(x.kw)} kW/m, ${hhmm(a.best.start)}–${hhmm(a.best.end)}):</p>
+    <div class="board"><b>${r.name}</b><div class="dims">${r.L[0]}–${r.L[1]} (${r.cm[0]}–${r.cm[1]} cm) · ancho ${r.width}${r.vol?` · ${r.vol[0]}–${r.vol[1]} L`:""}</div><div style="margin-top:4px">${cap(r.why)}.</div></div>`;
+  h+=`<p class="muted">Para ${P.h?String(P.h.toFixed(2)).replace(".",",")+" m":""}${P.w?`, ${P.w} kg`:""}, nivel ${LVN[P.lv]}${P.boards?`, usas ${P.boards.join(" y ")}`:""}. Son medidas de referencia; confírmalas con quien te arriende o venda la tabla.</p>`;
+  if(lvl(a.score)===0) h+=`<p>Ojo: ese día no pasa. ${(()=>{let b=null;for(let dd=curDay;dd<Math.min(ND,curDay+7);dd++){const z=bestOf(dd);if(!b||z.score>b.score)b=z}return b&&lvl(b.score)>=1?`Mejor ${day(b.d)} en ${SPOTS[b.key].name}.`:""})()}</p>`;
+  if(r.kid) h+=`<p class="muted">Para niños: tabla blanda o con quillas de goma, y siempre con alguien en el agua.</p>`;
+  return {html:h,chips:[`¿Y para ${d===curDay+1?"pasado mañana":"mañana"}?`,"¿Cómo viene la semana?"]}}
+function answer(raw){
+  const o=parse(raw);if(o.h&&o.w) P={};   // perfil nuevo completo: no arrastrar tablas de otra persona
+  ["h","w","lv","boards","kid"].forEach(f=>{if(o[f]!=null)P[f]=o[f]});save();
+  const profileOnly=(o.h||o.w||o.lv||o.boards)&&!o.outlook&&o.d==null&&!o.weekend;
+  if(o.board||profileOnly){ev("chat-tabla","Chat: tabla");return boardAnswer(o)}
+  if(o.outlook||o.weekend){ev("chat-semana","Chat: pronóstico");return {html:outlook(o),chips:["¿Qué tabla uso?","¿Y el fin de semana?"]}}
+  if(o.d!=null||o.spot){ev("chat-dia","Chat: día");const d=o.d!=null?o.d:verdictDay;
+    let h=`<p>${dayLine(d,o.spot)}</p>`;const a=o.spot?ANA[d][o.spot]:bestOf(d);
+    if(!o.spot) h+=`<p class="muted">${KEYS.filter(k=>k!==a.key).map(k=>`${SPOTS[k].name}: ${lvT(ANA[d][k].score)}`).join(" · ")}</p>`;
+    if(P.lv&&P.w&&P.h){const r=boardFor(P,a.best.a,a.key);h+=`<p>Para ti: <b>${r.name.toLowerCase()}</b> ${r.L[0]}–${r.L[1]}${r.vol?`, ${r.vol[0]}–${r.vol[1]} L`:""}.</p>`}
+    return {html:h,chips:["¿Qué tabla uso?","¿Cómo viene la semana?"]}}
+  ev("chat-otro","Chat: sin entender");
+  return {html:`<p>Puedo responder sobre el pronóstico de los próximos días y recomendarte tabla según tu estatura, peso y nivel.</p><p class="muted">Prueba: "¿cómo viene la semana?", "¿mañana dónde?", "mido 1,50, peso 25 kg, avanzado".</p>`,chips:["¿Cómo viene la semana?","¿Mañana dónde?","¿Qué tabla uso?"]}}
+
+/* —— interfaz —— */
+function say(html,who){const m=document.createElement("div");m.className="msg "+who;m.innerHTML=html;log.appendChild(m);log.scrollTop=log.scrollHeight}
+function setChips(list){chips.innerHTML="";(list||[]).forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>ask(t);chips.appendChild(b)})}
+function ask(t){t=t.trim();if(!t) return;say(t.replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c])),"me");const r=answer(t);say(r.html,"bot");setChips(r.chips)}
+let opened=false;
+function open(){$("chat").hidden=false;$("askBtn").hidden=true;ev("chat-abierto","Abrió el chat");
+  if(!opened){opened=true;const v=bestOf(verdictDay);
+    say(`<p>Hola. ${dayLine(verdictDay)}</p><p>Pregúntame cómo viene la semana o qué tabla usar. Si me dices estatura, peso y nivel, te doy medidas.</p>`,"bot");
+    setChips(P.lv?["¿Qué tabla uso?","¿Cómo viene la semana?","¿Mañana dónde?"]:["¿Cómo viene la semana?","¿Qué tabla uso?","¿Mañana dónde?"])}
+  setTimeout(()=>inp.focus({preventScroll:true}),50)}
+function close(){$("chat").hidden=true;$("askBtn").hidden=false;$("askBtn").focus()}
+$("askBtn").onclick=open;$("chatX").onclick=close;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("chat").hidden)close()});
+$("chatF").onsubmit=e=>{e.preventDefault();const t=inp.value;inp.value="";ask(t)};
+window.__svAnswer=answer;
+})();
 /* ——— uso: eventos anónimos a GoatCounter (solo en la página pública; sin cookies) ——— */
 (()=>{const q=[],send=(p,t)=>{const g=window.goatcounter;if(g&&g.count){g.count({path:p,title:t||p,event:true});return true}return false};
   const ev=(p,t)=>{if(!send(p,t))q.push([p,t])};
