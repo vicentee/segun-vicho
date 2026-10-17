@@ -603,10 +603,16 @@ const BOARDS={espuma:"espuma",softtop:"espuma",soft:"espuma",longboard:"longboar
 
 /* —— lectura de la pregunta —— */
 function parse(raw){const t=norm(raw),o={};
-  let m=t.match(/(\d)[.,](\d{2})\s*(m|mt|mts|metros?)?\b/);if(m) o.h=+(m[1]+"."+m[2]);
-  if(!o.h&&(m=t.match(/\b(1\d{2}|[89]\d)\s*(cm|centimetros?)\b/))) o.h=+m[1]/100;
-  if(!o.h&&(m=t.match(/mido\s*(1\d{2})\b/))) o.h=+m[1]/100;
-  if((m=t.match(/(\d{2,3})(?:[.,]\d)?\s*(kg|kilos?|kgs)\b/))||(m=t.match(/peso\s*(\d{2,3})\b/))) o.w=+m[1];
+  // números: 1.7 / 1,70 / 170 cm = estatura; 70 / 70 kg / peso 70 = kilos (salvo horas y días del mes)
+  let m;const re=/(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|centimetros?|mts?|metros?|m|kgs?|kilos?)?(?![\d:h])/g;
+  while((m=re.exec(t))){const v=parseFloat(m[1].replace(",",".")),u=m[2]||"",before=t.slice(Math.max(0,m.index-14),m.index);
+    if(/[:]$/.test(before)) continue;
+    const dayCtx=/(lunes|martes|miercoles|jueves|viernes|sabado|domingo|dia|el|las|a la)\s*$/.test(before);
+    if(/^(m|mts?|metros?)$/.test(u)||(!u&&/[.,]/.test(m[1])&&v>=.9&&v<=2.3)){if(v>=.9&&v<=2.3)o.h=v;continue}
+    if(/^(cm|centimetros?)$/.test(u)||(!u&&/mido\s*$/.test(before))){if(v>=90&&v<=230)o.h=v/100;continue}
+    if(/^(kgs?|kilos?)$/.test(u)||/peso\s*$/.test(before)){if(v>=10&&v<=180)o.w=v;continue}
+    if(u||dayCtx||/[.,]/.test(m[1])) continue;
+    if(v>=120&&v<=230&&!o.h) o.h=v/100; else if(v>=10&&v<=150&&!o.w) o.w=v}
   // "cook"/"kook" es solo "surfista" aquí; el nivel lo da la otra palabra
   if(/\b(avanzad|experto|pro\b|surfeo bien)/.test(t)) o.lv=3;
   else if(/\b(medio|intermedi|regular|mas o menos)/.test(t)) o.lv=2;
