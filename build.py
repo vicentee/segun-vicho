@@ -41,7 +41,7 @@ HEAD = """<!doctype html>
 <html lang="es"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0F3B45">
+<meta name="theme-color" content="#1F45D6">
 <meta name="apple-mobile-web-app-title" content="Según Vicho">
 <link rel="icon" type="image/svg+xml" href="icons/icono.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">

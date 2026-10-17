@@ -27,7 +27,7 @@ construction = f'''<svg viewBox="-4 -7 92 76" width="100%" role="img" aria-label
   <g>{uniq(icon(level=3), "c").replace('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">', "").replace("</svg>", "")}</g>
   <g stroke="#FFFFFF" stroke-opacity=".28" stroke-width=".18">{grid}</g>
   <rect x="0" y="0" width="64" height="64" rx="14" fill="none" stroke="var(--accent)" stroke-width=".35" stroke-dasharray="1 1"/>
-  <g fill="none" stroke="var(--accent)" stroke-width=".4"><circle cx="17" cy="17" r="6.2"/><line x1="0" y1="41" x2="64" y2="41"/></g>
+  <g fill="none" stroke="var(--accent)" stroke-width=".4"><line x1="0" y1="38" x2="64" y2="38"/></g>
   <g font-family="IBM Plex Mono, monospace" font-size="2.6" fill="var(--ink)">
     <text x="32" y="-2" text-anchor="middle">aguja · bloque · muesca</text>
     
@@ -36,17 +36,16 @@ construction = f'''<svg viewBox="-4 -7 92 76" width="100%" role="img" aria-label
   </g>
 </svg>'''
 
-swatches = [("oceano", "Océano", "Fondo. El mar de Matanzas a primera hora."),
-            ("granito", "Granito", "La roca. Blanco cálido, como la piedra cubierta de guano."),
+swatches = [("oceano", "Ultramar", "Fondo. Un solo campo de color plano, el mismo azul de los datos del reporte."),
+            ("granito", "Papel", "La roca. Blanco cálido, como la piedra cubierta de guano."),
             ("agua", "Agua", "La línea de mar que corta la base de la roca."),
             ("espuma", "Espuma", "La reventazón delante de la roca."),
-            ("sol", "Sol", "Único acento cálido. Solo en tamaño grande."),
             ("oceano_noche", "Noche", "Fondo de la variante oscura.")]
 sw = "".join(f'<div class="sw"><i style="background:{TOKENS[k]}"></i><b>{name}</b><code>{TOKENS[k]}</code><span>{desc}</span></div>' for k, name, desc in swatches)
 
 levels = [(1, 16, "≤ 20 px · pestaña del navegador", "La roca y la línea de agua. A 16 píxeles basta la aguja para reconocerla."),
           (2, 32, "≤ 48 px · favoritos, barra de tareas", "Entra la espuma delante de la roca."),
-          (3, 180, "> 48 px · pantalla de inicio", "Segunda línea de espuma y el sol.")]
+          (3, 180, "> 48 px · pantalla de inicio", "Segunda línea de espuma, más tenue.")]
 lv = "".join(f'''<div class="lv"><div class="lv-art"><div class="real">{I(px if px < 64 else 72, level=l)}</div>
   {"<div class='zoom'>" + I(112, level=l) + "</div>" if px < 64 else ""}</div>
   <b>Nivel {l}</b><span class="mono">{t}</span><p>{d}</p></div>''' for l, px, t, d in levels)
@@ -102,15 +101,15 @@ h1{{font:700 34px/1.05 var(--f-head);margin:0}} h2{{font:600 21px/1.2 var(--f-he
 <section><h2>Construcción</h2><p class="sub">Grilla de 64 × 64 unidades. La roca se centra y se apoya en la línea de agua.</p>
 <div class="cons">{construction}<ul>
 <li><b>Esquinas</b> de 14 unidades, iguales a los íconos de app de iOS y Android.</li>
-<li><b>La roca</b> es una sola silueta de 31 puntos, escalada según el nivel (68%, 66% y 64% del ancho) y centrada.</li>
+<li><b>La roca</b> es una sola silueta de 31 puntos, escalada según el nivel (70%, 68% y 68% del ancho) y centrada.</li>
 <li><b>La línea de agua</b> corta la base de la roca y se extiende 6 unidades a cada lado.</li>
 <li><b>La espuma</b> son trazos rectos y desplazados, nunca curvos: así no se lee como una cara.</li>
-<li><b>El sol</b> equilibra la aguja en la diagonal opuesta.</li></ul></div></section>
+<li><b>Sin adornos:</b> colores planos, sin degradados ni sombras. Lo orgánico lo pone el contorno irregular de la roca.</li></ul></div></section>
 
 <section><h2>Un ícono, tres niveles</h2><p class="sub">No se achica el mismo dibujo: se quita detalle según el tamaño, para que a 16 píxeles siga leyéndose la punta y las olas.</p>
 <div class="lvs">{lv}</div></section>
 
-<section><h2>Paleta</h2><p class="sub">Seis tokens. El sol es el único color cálido: si aparece otro acento, sobra.</p><div class="sws">{sw}</div></section>
+<section><h2>Paleta</h2><p class="sub">Cinco tokens. Azul y papel hacen todo el trabajo; el resto son matices de los mismos dos.</p><div class="sws">{sw}</div></section>
 
 <section><h2>Variantes</h2><div class="vas">{va}</div></section>
 
