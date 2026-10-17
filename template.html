@@ -34,6 +34,9 @@ header .t{font-family:var(--f-head);font-weight:600;font-size:17px;line-height:1
 header .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
 header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-top:4px;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
 header .upd{white-space:nowrap}
+.cam{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;align-self:flex-start;color:var(--ink);text-decoration:none;font-weight:600;font-size:14px;border:1.5px solid var(--ink);border-radius:999px;padding:6px 14px 6px 12px}
+.cam small{font-weight:400;color:var(--muted);font-size:12px}
+.cam:hover{background:var(--panel)} .cam:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .pwm{display:block;margin:4px 0 2px;max-width:100%}
 .pwlegend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:-6px}
 .pwlegend i{display:inline-block;width:14px;height:6px;border-radius:1px;margin-right:4px;vertical-align:1px}
@@ -150,7 +153,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);paddin
 <script>
 const DATA = __DATA__;
 const SPOTS = {
-  mat:{name:"Matanzas",face:290,k:0.85,lo:0.9,hi:2.0,min:0.45,max:3.0,tidePref:0.15,orient:"O–ONO (Mar Blanco)",subs:"Mar Blanco · la punta · beach break",
+  mat:{name:"Matanzas",cam:{url:"https://misolas.com/cameras/111001",by:"Misolas",note:"de pago"},face:290,k:0.85,lo:0.9,hi:2.0,min:0.45,max:3.0,tidePref:0.15,orient:"O–ONO (Mar Blanco)",subs:"Mar Blanco · la punta · beach break",
     style:"Mejor temprano: el SO entra fuerte después del mediodía.",
     tideNote:"Marea media; en baja asoma la roca.",
     links:[["Wisuki","https://es.wisuki.com/forecast/4253/matanzas"],["Lineup · Mar Blanco","https://lineup.surf/es/spots/chile/o-higgins/matanzas/mar-blanco-1810"],["Breakfinder","https://breakfinder.surf/en/surf_spots/matanzas"],["Windguru","https://www.windguru.cz/42511"],["Surf-forecast","https://www.surf-forecast.com/breaks/Matanzas/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/matanzas/5842041f4e65fad6a7708cc3"]]},
@@ -278,6 +281,7 @@ function pwMeter(kw,w=100){const max=60,X=v=>Math.min(v,max)/max*w;let g="",x=0;
   const mx=X(kw);g+=`<path d="M${mx-3.5} 0 L${mx+3.5} 0 L${mx} 4.5 Z" fill="var(--ink)"/>`;
   return `<svg class="pwm" viewBox="0 0 ${w} 11" width="${w}" height="11" aria-hidden="true">${g}</svg>`}
 const perShort=t=>t<9?"corto":t<12?"normal":t<15?"espaciado":"largo";
+const camBtn=k=>{const c=SPOTS[k].cam;return c?`<a class="cam" href="${c.url}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="1" y="4" width="10" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 7 L15 5 L15 11 L11 9 Z" fill="currentColor"/></svg>Ver cámara<small>${c.by} · ${c.note}</small></a>`:""};
 function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
   return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
     <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
@@ -301,6 +305,7 @@ function renderVerdict(){
   document.getElementById("verdict").innerHTML=`
     <span class="status ${st[1]}">${st[0]}</span>
     <h2 class="line">${line}</h2>
+    ${L>=1?camBtn(b.key):""}
     <div class="facts">${metrics(x,b.key,[sp!=null?hhmm(sp):"no",sp!=null?"se ensucia":"se ensucia en el día"])}</div>
     <p class="aside" style="margin-top:-4px">Peak de la ola a las <b>${hhmm(b.peak.i%24)}</b>.</p>
     <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)} (${Math.round(x.teff)} s), ${tideTrend(b.key,x.i)}. ${(()=>{const bd=board(x,b.key);return `Lleva ${bd[0]}: ${bd[1]}.`})()}${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
@@ -403,6 +408,7 @@ function renderDay(){
   document.getElementById("day").innerHTML=trendNote+`
     <div class="k">${dLong(d)} ${dNum(d)}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${P.name}</h3><span class="lvl l${lvl(a.score)}">${lvlName(a.score)}</span></div>
+    ${d===curDay?camBtn(mainK):""}
     <p class="sum">${sum}</p>
     ${chart(mainK,d)}${legend}
     <ol class="tramos">${segments(mainK,d).map(sg=>`<li class="${sg.start<=a.best.start&&sg.end>a.best.start?"now":""}"><span class="h">${hhmm(sg.start)}–${hhmm(sg.end)}</span><span class="lvl l${sg.L}">${lvlName(sg.xs.reduce((m,x)=>Math.max(m,x.score),0))}</span><span>${sg.txt}</span></li>`).join("")}</ol>
