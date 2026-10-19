@@ -279,6 +279,11 @@ def history(prev, now_utc):
 if __name__ == "__main__":
     tpl, webp, outp = sys.argv[1:4]
     web = json.load(open(webp)) if webp != "-" else {}
+    # datos de sitios web viejos no suman: si web.json tiene más de 36 h (o no dice cuándo se leyó), se ignora
+    upd = (web.get("_meta") or {}).get("updated_utc")
+    if not upd or (datetime.datetime.utcnow() - datetime.datetime.strptime(upd, "%Y-%m-%dT%H:%MZ")).total_seconds() > 36 * 3600:
+        print("web.json sin fecha o con más de 36 h: se usan solo los modelos")
+        web = {}
     data = build(web)
     data["hist"] = history(read_data(outp), data["generated_utc"])
     html = open(tpl).read().replace("__DATA__", json.dumps(data, separators=(",", ":"), ensure_ascii=False))

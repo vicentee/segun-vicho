@@ -24,15 +24,17 @@ Reporte de surf para **Matanzas, Puertecillo y Topocalma** (VI Región, Chile). 
 |---|---|
 | `build.py` | Trae los datos, corta outliers, calcula medianas y escribe `index.html` |
 | `template.html` | La página: diseño, puntaje y textos |
+| `scrape.py` | Lee Surf-forecast y Wisuki y escribe `web.json` |
 | `web.json` | Valores leídos de los sitios web en la última corrida |
 | `marca/` | Sistema del ícono (la roca de Matanzas): `icono.py` genera los SVG, `index.html` es la hoja de marca |
 | `icons/`, `manifest.webmanifest` | Íconos y datos para instalar la app en el celular |
 
 ## Actualización
 
-A las 00:00, 06:00, 12:00 y 18:00 (hora de Chile) una tarea programada lee los sitios web, actualiza `web.json` y reconstruye `index.html`. Como respaldo, la GitHub Action `actualizar.yml` reconstruye la página 15 minutos después de cada horario y cada vez que cambia `template.html`, `build.py` o `web.json`.
+A las 00:15, 06:15, 12:15 y 18:15 (hora de Chile) la GitHub Action `actualizar.yml` lee Surf-forecast y Wisuki (`scrape.py` → `web.json`), trae los modelos de Open-Meteo y reconstruye `index.html` (`build.py`). También corre cada vez que cambia `template.html`, `build.py` o `scrape.py`. Si `web.json` tiene más de 36 horas, se ignora y la mediana usa solo los modelos.
 
 ```bash
+python3 -I scrape.py web.json
 python3 -I build.py template.html web.json index.html
 ```
 

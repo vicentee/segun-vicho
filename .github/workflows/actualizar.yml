@@ -3,11 +3,11 @@ name: Actualizar reporte
 on:
   schedule:
     # 00:15, 06:15, 12:15 y 18:15 en Chile con horario de verano (UTC-3).
-    # En invierno (UTC-4) corre una hora antes; la tarea programada principal sí sigue la hora de Chile.
+    # En invierno (UTC-4) corre una hora antes. Lee los sitios web (scrape.py) y los modelos (build.py).
     - cron: "15 3,9,15,21 * * *"
   push:
     branches: [main]
-    paths: ["web.json", "template.html", "build.py"]
+    paths: ["template.html", "build.py", "scrape.py"]
   workflow_dispatch:
 
 permissions:
@@ -26,12 +26,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Leer los sitios web (Surf-forecast, Wisuki) a web.json
+        run: python3 -I scrape.py web.json
+        continue-on-error: true
       - name: Construir index.html con la mediana de todas las fuentes
         run: python3 -I build.py template.html web.json index.html
       - name: Publicar si cambió
         run: |
           git config user.name "segun-vicho-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add index.html
+          git add index.html web.json
           git diff --cached --quiet || git commit -m "Reporte actualizado $(date -u +%Y-%m-%dT%H:%MZ)"
           git push
