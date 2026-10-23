@@ -469,16 +469,17 @@ function weekBar(k,d,a,today){const [sr,ss]=daylight(k,d),n=WK_H1-WK_H0,W=300,cw
   if(lvl(a.score)>=1){const x0=(a.best.start-WK_H0)*cw,x1=(a.best.end-WK_H0)*cw;r+=`<rect x="${x0+.6}" y="24" width="${x1-x0-1.2}" height="4" rx="2" fill="var(--amber)"/>`}
   if(today){const hNow=nowIdx-d*24;if(hNow>=WK_H0&&hNow<=WK_H1){const x=(hNow-WK_H0)*cw;r+=`<line x1="${x}" x2="${x}" y1="0" y2="28" stroke="var(--ink)" stroke-width="1.5"/><circle cx="${x}" cy="1.5" r="2.5" fill="var(--ink)"/>`}}
   return `<svg class="wkbar" viewBox="0 0 ${W} 28" preserveAspectRatio="none" aria-hidden="true">${r}</svg>`}
-let wkTrendOpen=false;
+let wkTrendOpen=false;const WK_SHOW=5;   // días visibles; el resto (incluida la tendencia) queda plegado
 function renderMatrix(){
   const days=[];for(let d=curDay;d<ND;d++)days.push(d);
   const ab=k=>SPOTS[k].name.slice(0,3);
   const ticks=[6,9,12,15,18].map(h=>`<span style="left:${(h-WK_H0)/(WK_H1-WK_H0)*100}%">${h}</span>`).join("");
   let h=`<div class="wk"><div class="wk-r wk-h"><span></span><div class="wk-ax">${ticks}</div><div class="wk-s">${KEYS.map(k=>`<span>${ab(k)}</span>`).join("")}</div></div>`;
-  let trendShown=false,wkBest=null;for(let dd=curDay;dd<Math.min(ND,curDay+7);dd++){const z=bestOf(dd);if(lvl(z.score)>=1&&(!wkBest||z.score>wkBest.score))wkBest=z}
+  let trendShown=false,foldOpen=false,wkBest=null;for(let dd=curDay;dd<Math.min(ND,curDay+7);dd++){const z=bestOf(dd);if(lvl(z.score)>=1&&(!wkBest||z.score>wkBest.score))wkBest=z}
   days.forEach(d=>{const best=bestOf(d),tr=TREND(d),selRow=d===selDay,rk=selRow&&selKey?selKey:best.key,b=ANA[d][rk],L=lvl(b.score);   // la fila muestra el spot elegido (o el mejor)
-    if(tr&&!trendShown){trendShown=true;const nT=days.filter(TREND).length;
-      h+=`<details class="wk-more"${wkTrendOpen||(selDay!=null&&TREND(selDay))?" open":""}><summary>Tendencia · ${nT} días más <small>pocos modelos, solo para ver si viene swell</small></summary>`}
+    if(d===curDay+WK_SHOW){foldOpen=true;const nM=days.length-WK_SHOW,hid=wkBest&&wkBest.d>=curDay+WK_SHOW;
+      h+=`<details class="wk-more"${wkTrendOpen||selDay>=curDay+WK_SHOW?" open":""}><summary>${nM} días más <small>${hid?`el mejor de la semana está aquí: ${dLong(wkBest.d)} ${dNum(wkBest.d)}`:"incluye la tendencia"}</small></summary>`}
+    if(tr&&!trendShown){trendShown=true;h+=`<div class="wk-sep">Tendencia · pocos modelos, solo para ver si viene swell</div>`}
     const hh=h=>String(h).padStart(2,"0"),cap=tr?`${SPOTS[b.key].name} · ${fm(b.best.a.face)} m`:L>=1?`<b>${SPOTS[b.key].name}</b> ${hh(b.best.start)}–${hh(b.best.end)} h · ${fm(b.best.a.face)} m`:`No pasa · ${fm(b.best.a.face)} m`;
     const top=wkBest&&wkBest.d===d;
     h+=`<div class="wk-r${tr?" tr":""}${selRow?" sel":""}${top?" top":""}" data-d="${d}" data-k="${b.key}" role="button" tabindex="0" aria-label="${dLong(d)} ${dNum(d)}: ${lvlName(b.score)}${L>=1?" en "+SPOTS[b.key].name+" de "+hhmm(b.best.start)+" a "+hhmm(b.best.end):""}">
@@ -486,7 +487,7 @@ function renderMatrix(){
       <div class="wk-b">${weekBar(b.key,d,b,d===curDay)}<small>${cap}</small></div>
       <div class="wk-s">${KEYS.map(k=>{const a=ANA[d][k],sel=selRow&&k===rk;
         return `<button class="cell l${lvl(a.score)}${k===best.key&&lvl(best.score)>=1&&!tr?" best":""}${sel?" sel":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}, ${fm(a.score)} de 10">${fm(a.score)}</button>`}).join("")}</div></div>`});
-  document.getElementById("mx").innerHTML=h+(trendShown?`</details>`:"")+`</div>`;
+  document.getElementById("mx").innerHTML=h+(foldOpen?`</details>`:"")+`</div>`;
   const dm=document.querySelector(".wk-more");if(dm)dm.addEventListener("toggle",()=>{wkTrendOpen=dm.open});
   const go=(d,k)=>{selDay=d;selKey=k;renderMatrix();renderDay()};
   document.querySelectorAll(".wk .cell").forEach(c=>c.onclick=e=>{e.stopPropagation();go(+c.dataset.d,c.dataset.k)});
