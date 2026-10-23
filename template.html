@@ -38,6 +38,7 @@ header .upd{white-space:nowrap}
 .cam small{font-weight:400;color:var(--muted);font-size:12px}
 .cam:hover{background:var(--panel)} .cam:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .pwm{display:block;margin:4px 0 2px;max-width:100%}
+.hg .pwm{margin:4px auto 0}
 .pwlegend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:-6px}
 .pwlegend i{display:inline-block;width:14px;height:6px;border-radius:1px;margin-right:4px;vertical-align:1px}
 header .clock{color:var(--ink);font-size:12px;display:inline-flex;align-items:center;gap:5px}
@@ -48,9 +49,6 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 @media (prefers-reduced-motion:no-preference){.nowp{animation:ping 1.8s ease-out infinite}}
 @keyframes ping{0%{transform:scale(1);opacity:.45}100%{transform:scale(2.8);opacity:0}}
 /* bloque de métricas de la ventana: la hora como título, con el ámbar de "ventana" */
-.at{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:-4px}
-.at i{width:12px;height:12px;border-radius:2px;background:var(--amber);opacity:.5;flex:none}
-.at b{font-family:var(--f-head);font-size:17px;font-weight:600;color:var(--ink)}
 .doubt{margin:-4px 0 0;font-size:14px;color:var(--muted);max-width:60ch}
 /* semana: calendario de horas */
 .wk{display:flex;flex-direction:column}
@@ -242,9 +240,9 @@ const DATA = __DATA__;
 const SPOTS = {
   mat:{name:"Matanzas",cam:{url:"https://misolas.com/cameras/111001",by:"Misolas",note:"de pago"},face:290,k:0.85,lo:0.9,hi:2.0,min:0.45,max:3.0,tidePref:0.15,orient:"O–ONO (Mar Blanco)",subs:"Mar Blanco · la punta · beach break",
     style:"Mejor temprano: el SO entra fuerte después del mediodía.",
-    tideNote:"Marea media; en baja asoma la roca.",
-    links:[["Wisuki","https://es.wisuki.com/forecast/4253/matanzas"],["Lineup · Mar Blanco","https://lineup.surf/es/spots/chile/o-higgins/matanzas/mar-blanco-1810"],["Breakfinder","https://breakfinder.surf/en/surf_spots/matanzas"],["Windguru","https://www.windguru.cz/42511"],["Surf-forecast","https://www.surf-forecast.com/breaks/Matanzas/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/matanzas/5842041f4e65fad6a7708cc3"]]},
-  pue:{name:"Puertecillo",cam:{url:"https://misolas.com/cameras/802657",by:"Misolas",note:"de pago"},face:310,k:0.8,lo:1.0,hi:2.3,min:0.6,max:3.2,tidePref:0.0,orient:"N en la punta, O en la playa",subs:"La punta · Tumán",
+    tideNote:"Mejor con marea media.",
+    links:[["Wisuki","https://es.wisuki.com/forecast/4253/matanzas"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/matanzas/matanzas-1800"],["Breakfinder","https://breakfinder.surf/en/surf_spots/matanzas"],["Windguru","https://www.windguru.cz/42511"],["Surf-forecast","https://www.surf-forecast.com/breaks/Matanzas/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/matanzas/5842041f4e65fad6a7708cc3"]]},
+  pue:{name:"Puertecillo",cam:{url:"https://misolas.com/cameras/802657",by:"Misolas",note:"de pago"},face:310,k:0.95,lo:0.9,hi:2.3,min:0.5,max:3.2,tidePref:0.0,orient:"N en la punta, O en la playa",subs:"La punta · Tumán",
     style:"Necesita tamaño para conectar. Aguanta el S mejor que Matanzas; el norte la arruina.",
     tideNote:"Baja a media subiendo.",
     links:[["Wisuki","https://es.wisuki.com/forecast/6652/puertecillo"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/litueche/puertecillo-1807"],["Swellnet","https://www.swellnet.com/forecasts/chile/o-higgins/puertecillo"],["Breakfinder","https://breakfinder.surf/en/surf_spots/puertecillo"],["Surf-forecast","https://www.surf-forecast.com/breaks/Puertecillo/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/puertecillo/5842041f4e65fad6a7708cc0"]]},
@@ -337,6 +335,19 @@ if(Date.now()-Date.parse(DATA.generated_utc)>12*36e5||nowIdx>NH-30){const s=docu
 const sizeWord=f=>f<.5?["chico","a la rodilla"]:f<.8?["medio metro","a la cintura"]:f<1.15?["un metro","al pecho"]:f<1.6?["metro y medio","a la cabeza"]:f<2.2?["dos metros","sobre la cabeza"]:["grande","de doble para arriba"];
 const cap=t=>t[0].toUpperCase()+t.slice(1);
 const cleanWord=x=>{const w=windWord(x.ws,x.wd,x.key)[0];return ["glassy","offshore","cross-offshore"].includes(w)?"limpio":w==="cross-shore"?"con textura":"desordenado"};
+/* cómo se dice en la playa: glassy, terral, chupada, con textura, choppy, soplado; enano, chancho; entró el swell */
+function seaWord(x){const w=windWord(x.ws,x.wd,x.key);
+  if(x.ws<6) return "glassy";
+  if(w[0]==="offshore") return x.ws>=25?"terral fuerte, la ola viene chupada":x.ws>=15?"con terral, la ola viene chupada":"limpio con terral";
+  if(w[0]==="cross-offshore") return x.ws>=25?"terral cruzado fuerte":"limpio";
+  if(w[0]==="cross-shore") return x.ws<12?"con textura":"choppy";
+  return x.ws<10?"choppy":"soplado"}
+function dayTalk(k,d,x){const out=[];
+  if(x.face<.5||x.kj<250) out.push("Está enano.");
+  else if(x.face>=2&&x.kj>=1500) out.push("Está chancho.");
+  if(d>=1){const avg=dd=>{let s=0,n=0;for(let h=7;h<=18;h++){const v=hourly(k,dd*24+h).face;s+=v;n++}return s/n};
+    const a1=avg(d),a0=avg(d-1);if(a1>=.9&&a1>=a0*1.35) out.push("Entró el swell.")}
+  return out.join(" ")}
 const lvlName=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
 const mr=f=>`${fm(f*.85)}–${fm(f*1.15)} m`;
 const periodWord=t=>t<10?"olas seguidas y cortas":t<13?"series normales":"series espaciadas";
@@ -353,7 +364,7 @@ function hourGrid(key,d,a){const [sr,ss]=daylight(key,d),S=DATA.spots[key],nowH=
     ${row("Nivel",c=>td(c,`<span class="sc l${lvl(c.x.score)}">${fm(c.x.score)}</span>`))}
     ${row("Ola <small>m</small>",c=>td(c,fm(c.x.face)))}
     ${row("Período <small>s</small>",c=>td(c,Math.round(c.x.teff)))}
-    ${row("Energía <small>kJ</small>",c=>td(c,kjFmt(c.x.kj)))}
+    ${row("Energía <small>kJ</small>",c=>td(c,`${kjFmt(c.x.kj)}${pwMeter(c.x.kj,40)}`))}
     ${row("Viento <small>km/h</small>",c=>td(c,`<span class="nw">${arrow(c.x.wd,c.ww[1])}${Math.round(c.x.ws)}</span><small class="wtag ${c.ww[1]}">${wShort(c.ww[0])}</small>`))}
     ${row("Marea <small>m</small>",c=>td(c,c.tide==null?"–":`${c.up==null?"":c.up?"↑":"↓"}${fm(Math.abs(c.tide)<.05?0:c.tide)}`))}
   </tbody></table></div>`}
@@ -383,13 +394,6 @@ function metrics4(x,k){const ww=windWord(x.ws,x.wd,k);
     <div><b>${Math.round(x.teff)} s</b><span>período · ${perShort(x.teff)}</span></div>
     <div><b>${kjFmt(x.kj)} kJ</b>${pwMeter(x.kj)}<span>energía ${pwBand(x.kj).w}</span></div>
     <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span><span class="wtag ${ww[1]}">${ww[0]}</span></span></div>`}
-function metrics(x,k,extra){const ww=windWord(x.ws,x.wd,k);
-  return `<div><b>${mr(x.face)}</b><span>ola en la rompiente</span></div>
-    <div><b>${sarrow(x.sd)}${fm(x.sh)} m</b><span>altura del swell · del ${es16(x.sd)}</span></div>
-    <div><b>${Math.round(x.teff)} s</b><span>período · ${perShort(x.teff)}</span></div>
-    <div><b>${kjFmt(x.kj)} kJ</b>${pwMeter(x.kj)}<span>energía ${pwBand(x.kj).w}</span></div>
-    <div><b>${arrow(x.wd,ww[1])}${Math.round(x.ws)} km/h</b><span>del ${es16(x.wd)} · <span class="wtag ${ww[1]}">${ww[0]}</span></span></div>
-    ${extra?`<div><b>${extra[0]}</b><span>${extra[1]}</span></div>`:""}`}
 
 /* ——— cambios: el mismo cálculo con corridas anteriores del pronóstico (DATA.hist) ——— */
 const HIST=DATA.hist||[], GEN=Date.parse(DATA.generated_utc);
@@ -454,7 +458,7 @@ function renderVerdict(){
     ${doubt(b.key,b)}
     ${L>=1?camBtn(b.key):""}
     <div class="facts f4">${metrics4(x,b.key)}</div>
-    <p class="expect"><b>Qué esperar:</b> olas ${sz[1]}, mar ${cleanWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const bd=board(x,b.key);return `Lleva ${bd[0]}: ${bd[1]}.`})()}${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
+    <p class="expect"><b>Qué esperar:</b> ${(t=>t?t+" ":"")(dayTalk(b.key,d,x))}Olas ${sz[1]}, ${seaWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
     ${changes(d,d===curDay?hNow+.5:0)}`;
 }
 
@@ -574,16 +578,13 @@ function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if
   c.addEventListener("pointerleave",e=>{if(!c.hasPointerCapture||!c.hasPointerCapture(e.pointerId))chartLeave(e)});
   c.addEventListener("dragstart",e=>e.preventDefault());c.addEventListener("selectstart",e=>e.preventDefault())})}
 const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>offshore</span><span><i style="background:var(--base)"></i>cross-shore</span><span><i style="background:var(--maral)"></i>onshore</span><span>flechas: hacia dónde van el swell (azul, arriba) y el viento</span></div>`;
-function boardLine(k,a){const bd=board(a.best.a,k);return `<p class="aside">Lleva <b>${bd[0].replace(/^(el|una|un) /,"")}</b>: ${bd[1]}.</p>`}
-function trio(k,a){const x=a.best.a,d=Math.floor(x.i/24),sp=spoilAt(k,d,a.best.end);
-  return `<div class="at"><i></i>En la ventana <b>${hhmm(a.best.start)}–${hhmm(a.best.end)}</b></div><div class="facts at-f">${metrics(x,k,[sp!=null?hhmm(sp):"no",sp!=null?"se ensucia":"se ensucia en el día"])}</div><p class="aside">${(()=>{const bd=board(x,k);return `Lleva <b>${bd[0].replace(/^(el|una|un) /,"")}</b>: ${bd[1]}.`})()}</p>`}
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
   return `<span class="nw">${sarrow(x.sd)}${mr(x.face)}</span> · ${Math.round(x.teff)} s · <span class="nw">${arrow(x.wd,windWord(x.ws,x.wd,k)[1])}${Math.round(x.ws)} km/h</span> · ${hhmm(a.best.start)}`}
 function renderDay(){
   const d=selDay,mainK=selKey||bestOf(d).key,a=ANA[d][mainK],P=SPOTS[mainK],x=a.best.a,sp=spoilAt(mainK,d,a.best.end);
-  const sum=lvl(a.score)>=1?`${mr(x.face)}, mar ${cleanWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
+  const sum=lvl(a.score)>=1?`${(t=>t?t+" ":"")(dayTalk(mainK,d,x))}${mr(x.face)}, ${seaWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
   // hoy: si la mejor ventana ya pasó, decir qué queda (coherente con el veredicto)
   const hNow=nowIdx-d*24,rest=d===curDay&&lvl(a.score)>=1&&a.best.end<=hNow?analyse(mainK,d,hNow+.5):null;
   const passed=d===curDay&&lvl(a.score)>=1&&a.best.end<=hNow?` Esa ventana ya pasó${rest&&rest.hrs.length>=2&&lvl(rest.score)>=1?`; lo que queda: <b>${hhmm(rest.best.start)}–${hhmm(rest.best.end)}</b> (${lvlName(rest.score).toLowerCase()})`:""}.`:"";
@@ -597,10 +598,9 @@ function renderDay(){
     ${!TREND(d)?doubt(mainK,a):""}
     ${chart(mainK,d)}${legend}
     ${hourGrid(mainK,d,a)}
-    ${boardLine(mainK,a)}
     ${more(mainK)}
     <div class="others">${others.map(k=>{const o=ANA[d][k];return `<details><summary><strong>${SPOTS[k].name}</strong><span class="t">${compare(k,a)}</span><span class="lvl l${lvl(o.score)}">${lvlName(o.score)}</span></summary>
-      <div class="inner">${d===curDay&&SPOTS[k].cam?`<div>${camBtn(k)}</div>`:""}${hourGrid(k,d,o)}${boardLine(k,o)}${more(k)}</div></details>`}).join("")}</div>`;
+      <div class="inner">${d===curDay&&SPOTS[k].cam?`<div>${camBtn(k)}</div>`:""}${hourGrid(k,d,o)}${more(k)}</div></details>`}).join("")}</div>`;
   renderWhy();bindCharts();
   document.querySelectorAll('.others details').forEach(dt=>dt.addEventListener('toggle',bindCharts));
 }
@@ -782,7 +782,13 @@ function boardAnswer(o){
   if(lvl(a.score)===0) h+=`<p>Ojo: ese día no pasa. ${(()=>{let b=null;for(let dd=curDay;dd<Math.min(ND,curDay+7);dd++){const z=bestOf(dd);if(!b||z.score>b.score)b=z}return b&&lvl(b.score)>=1?`Mejor ${day(b.d)} en ${SPOTS[b.key].name}.`:""})()}</p>`;
   if(r.kid) h+=`<p class="muted">Para niños: tabla blanda o con quillas de goma, y siempre con alguien en el agua.</p>`;
   return {html:h,chips:[`¿Y para ${d===curDay+1?"pasado mañana":"mañana"}?`,"¿Cómo viene la semana?"]}}
+const ASK_METHOD="¿Cómo se calcula y con qué fuentes?";
+function methodAnswer(){const M=DATA.spots.mat.models||{},web=(M.web||[]).filter(s=>!/^Windguru/.test(s)),wg=(M.web||[]).filter(s=>/^Windguru/.test(s)).map(s=>s.replace("Windguru ",""));
+  return {html:`<p><b>De dónde salen los datos.</b> ${M.wave.length} modelos de olas (${M.wave.join(", ")}), ${M.wind.length} de viento (${M.wind.join(", ")})${web.length?`, más ${web.join(", ")}`:""}${wg.length?` y los modelos regionales de Windguru (${wg.join(" y ")}), que en el viento cuentan doble`:""}.</p>
+  <p><b>Cómo se calcula.</b> Cada hora junto todas las fuentes, descarto las que se alejan demasiado del resto y me quedo con la mediana. Con eso estimo la ola en la rompiente de cada spot y le doy un puntaje de 0 a 10 según tamaño, período, dirección del swell, viento según la orientación del spot y marea.</p>
+  <p class="muted">Se actualiza a las 00:00, 06:00, 12:00 y 18:00. El detalle por fuente está en "Por qué esta recomendación".</p>`,chips:["¿Cómo viene la semana?","¿Mañana dónde?"]}}
 function answer(raw){
+  if(/calcul|fuente|de donde|metodo|como funciona|modelos/.test(norm(raw))){ev("chat-metodo","Chat: método y fuentes");return methodAnswer()}
   const o=parse(raw);if(o.h&&o.w){delete P.boards;delete P.kid}   // medidas nuevas: no arrastrar tablas de otra consulta; el nivel se mantiene
   ["h","w","lv","boards","kid"].forEach(f=>{if(o[f]!=null)P[f]=o[f]});save();
   const profileOnly=(o.h||o.w||o.lv||o.boards)&&!o.outlook&&o.d==null&&!o.weekend;
@@ -794,7 +800,7 @@ function answer(raw){
     if(P.lv&&P.w&&P.h){const r=boardFor(P,a.best.a,a.key);h+=`<p>Para ti: <b>${r.name.toLowerCase()}</b> ${r.L[0]}–${r.L[1]}${r.vol?`, ${r.vol[0]}–${r.vol[1]} L`:""}.</p>`}
     return {html:h,chips:["¿Qué tabla uso?","¿Cómo viene la semana?"]}}
   ev("chat-otro","Chat: sin entender");
-  return {html:`<p>Puedo responder sobre el pronóstico de los próximos días y recomendarte tabla según tu estatura, peso y nivel.</p><p class="muted">Prueba: "¿cómo viene la semana?", "¿mañana dónde?", "mido 1,50, peso 25 kg, avanzado".</p>`,chips:["¿Cómo viene la semana?","¿Mañana dónde?","¿Qué tabla uso?"]}}
+  return {html:`<p>Puedo responder sobre el pronóstico de los próximos días y recomendarte tabla según tu estatura, peso y nivel.</p><p class="muted">Prueba: "¿cómo viene la semana?", "¿mañana dónde?", "mido 1,50, peso 25 kg, avanzado".</p>`,chips:["¿Cómo viene la semana?","¿Mañana dónde?","¿Qué tabla uso?",ASK_METHOD]}}
 
 /* —— interfaz —— */
 const calm=matchMedia("(prefers-reduced-motion: reduce)").matches;let stream=null;
@@ -820,7 +826,7 @@ let opened=false;
 function open(){$("chat").hidden=false;$("askBtn").hidden=true;ev("chat-abierto","Abrió el chat");
   if(!opened){opened=true;const v=bestOf(verdictDay);
     say(`<p>Hola. ${dayLine(verdictDay)}</p><p>Pregúntame cómo viene la semana o qué tabla usar. Si me dices estatura, peso y nivel, te doy medidas.</p>`,"bot",
-      ()=>setChips(P.lv?["¿Qué tabla uso?","¿Cómo viene la semana?","¿Mañana dónde?"]:["¿Cómo viene la semana?","¿Qué tabla uso?","¿Mañana dónde?"]))}
+      ()=>setChips(P.lv?["¿Qué tabla uso?","¿Cómo viene la semana?","¿Mañana dónde?",ASK_METHOD]:["¿Cómo viene la semana?","¿Qué tabla uso?","¿Mañana dónde?",ASK_METHOD]))}
   setTimeout(()=>inp.focus({preventScroll:true}),50)}
 function close(){$("chat").hidden=true;$("askBtn").hidden=false;$("askBtn").focus()}
 $("askBtn").onclick=open;$("chatX").onclick=close;
