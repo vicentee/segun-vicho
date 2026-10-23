@@ -345,8 +345,8 @@ function seaWord(x){const w=windWord(x.ws,x.wd,x.key);
 function dayTalk(k,d,x){const out=[];
   if(x.face<.5||x.kj<250) out.push("Está enano.");
   else if(x.face>=2&&x.kj>=1500) out.push("Está chancho.");
-  if(d>=1){const avg=dd=>{let s=0,n=0;for(let h=7;h<=18;h++){const v=hourly(k,dd*24+h).face;s+=v;n++}return s/n};
-    const a1=avg(d),a0=avg(d-1);if(a1>=.9&&a1>=a0*1.35) out.push("Entró el swell.")}
+  if(d>=1){const kj=dd=>{let s=0;for(let h=7;h<=18;h++)s+=hourly("mat",dd*24+h).kj;return s/12};   // mismo swell para los tres spots
+    const a1=kj(d),a0=kj(d-1);if(a1>=500&&a1>=a0*1.6) out.push("Entró el swell.")}
   return out.join(" ")}
 const lvlName=s=>["no pasa","igual sale","bueno","épico","épico"][lvl(s)];
 const mr=f=>`${fm(f*.85)}–${fm(f*1.15)} m`;
@@ -356,7 +356,8 @@ function tideTrend(key,i){const S=DATA.spots[key],a=S.tide[i],b=S.tide[i+1];retu
 const GRID_H=[7,10,13,16,19];
 const wShort=w=>({"offshore":"off","cross-offshore":"cross-off","cross-shore":"cross","cross-onshore":"cross-on","onshore":"on","glassy":"glassy"})[w]||w;
 function hourGrid(key,d,a){const [sr,ss]=daylight(key,d),S=DATA.spots[key],nowH=nowIdx-d*24;
-  const cols=GRID_H.map(h=>{const x=hourly(key,d*24+h),night=h<Math.floor(sr)||h>=Math.ceil(ss),win=a&&h-1.5<a.best.end&&h+1.5>a.best.start,now=d===curDay&&Math.abs(nowH-h)<1.5;
+  const inWin=a?GRID_H.filter(h=>h>=a.best.start&&h<a.best.end):[],near=a&&!inWin.length?GRID_H.reduce((m,h)=>Math.abs(h-a.best.start)<Math.abs(m-a.best.start)?h:m,GRID_H[0]):null;
+  const cols=GRID_H.map(h=>{const x=hourly(key,d*24+h),night=h<Math.floor(sr)||h>=Math.ceil(ss),win=a&&(inWin.includes(h)||h===near),now=d===curDay&&Math.abs(nowH-h)<1.5;
     const ww=windWord(x.ws,x.wd,key),t0=S.tide[d*24+h],t1=S.tide[d*24+h+1];return {h,x,night,win,now,ww,tide:t0,up:t1!=null&&t0!=null?t1>t0:null}});
   const td=(c,inner,cls="")=>`<td class="${cls}${c.win?" win":""}${c.night?" night":""}">${inner}</td>`;
   const row=(lab,f)=>`<tr><th scope="row">${lab}</th>${cols.map(f).join("")}</tr>`;
@@ -458,7 +459,7 @@ function renderVerdict(){
     ${doubt(b.key,b)}
     ${L>=1?camBtn(b.key):""}
     <div class="facts f4">${metrics4(x,b.key)}</div>
-    <p class="expect"><b>Qué esperar:</b> ${(t=>t?t+" ":"")(dayTalk(b.key,d,x))}Olas ${sz[1]}, ${seaWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const s2=secondWindow(b.key,d,b);return s2?` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:""})()}</p>
+    <p class="expect"><b>Qué esperar:</b> ${(t=>t?t+" ":"")(dayTalk(b.key,d,x))}Olas ${sz[1]}, ${seaWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const s2=secondWindow(b.key,d,b);return s2?(s2.i%24<b.best.start?` También sirve más temprano, a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`):""})()}</p>
     ${changes(d,d===curDay?hNow+.5:0)}`;
 }
 
@@ -663,7 +664,7 @@ function renderWhy(){setTimeout(bindSrows,0);
 
 renderVerdict();selDay=verdictDay;selKey=null;renderMatrix();renderDay();
 const sst=DATA.spots.mat.sst.find(v=>v!=null);
-document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente, el nivel y la tabla son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00, o cuando Vicente cambia algo en el diseño de este reporte.`;
+document.getElementById("foot").innerHTML=`Agua ${sst?Math.round(sst)+"°":"–"}: traje 4/3${sst&&sst<15?" con botines":""}. El tamaño en la rompiente y el nivel son estimaciones propias. Se actualiza a las 00:00, 06:00, 12:00 y 18:00, o cuando Vicente cambia algo en el diseño de este reporte.`;
 
 /* ——— chat recomendador: reglas sobre el mismo pronóstico (sin servidor ni IA externa) ——— */
 (()=>{

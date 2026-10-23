@@ -185,7 +185,8 @@ def build(web):
             ws_ = [w for w in webs if w.get("date") == day and w.get("slot") == slot_of(hr)]
             g = lambda d, f: (d.get(f) or [None] * n)[i]
             # swell primario
-            shv = [(LABEL[m], g(d, "swell_wave_height")) for m, d in wave.items()] + [(w["src"], w.get("sh")) for w in ws_]
+            # 0,0 m exacto = el modelo no tiene dato (pasa al final de su horizonte)
+            shv = [(LABEL[m], g(d, "swell_wave_height") or None) for m, d in wave.items()] + [(w["src"], w.get("sh")) for w in ws_]
             sh, ks, cs = robust(shv, "sh")
             tpv = []
             for m, d in wave.items():
