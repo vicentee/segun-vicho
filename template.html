@@ -61,7 +61,7 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .wk-d{font-size:11.5px;color:var(--muted);line-height:1.1}
 .wk-d b{display:block;font-family:var(--f-head);font-size:18px;color:var(--ink);font-weight:600}
 .wk-b{min-width:0}
-.wkbar{display:block;width:100%;height:28px}
+.wkbar{display:block;width:100%;height:28px;touch-action:pan-y;-webkit-user-select:none;user-select:none}
 .wk-b small{display:block;font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wk-b small b{color:var(--ink);font-weight:600}
 .wk-ax{position:relative;height:14px;font-family:var(--f-mono);font-size:10.5px;color:var(--muted)}
@@ -494,10 +494,25 @@ function renderMatrix(){
         return `<button class="cell l${lvl(a.score)}${k===best.key&&lvl(best.score)>=1&&!tr?" best":""}${sel?" sel":""}" data-d="${d}" data-k="${k}" aria-label="${SPOTS[k].name}, ${dLong(d)}: ${lvlName(a.score)}, ${fm(a.score)} de 10">${fm(a.score)}</button>`}).join("")}</div></div>`});
   document.getElementById("mx").innerHTML=h+(foldOpen?`</details>`:"")+`</div>`;
   const dm=document.querySelector(".wk-more");if(dm)dm.addEventListener("toggle",()=>{wkTrendOpen=dm.open});
-  const go=(d,k)=>{selDay=d;selKey=k;renderMatrix();renderDay()};
+  const go=(d,k)=>{haptic();selDay=d;selKey=k;renderMatrix();renderDay()};
   document.querySelectorAll(".wk .cell").forEach(c=>c.onclick=e=>{e.stopPropagation();go(+c.dataset.d,c.dataset.k)});
+  document.querySelectorAll(".wk-r[data-d] .wkbar").forEach(bar=>{const row=bar.closest(".wk-r"),cap=row.querySelector(".wk-b small"),orig=cap.innerHTML;let hNow=null;
+    const k=row.dataset.k,d=+row.dataset.d;
+    const move=e=>{const r=bar.getBoundingClientRect(),h=Math.max(WK_H0,Math.min(WK_H1-1,WK_H0+Math.floor((e.clientX-r.left)/r.width*(WK_H1-WK_H0))));
+      if(h===hNow) return;if(hNow!==null)haptic();hNow=h;const x=hourly(k,d*24+h),ww=windWord(x.ws,x.wd,k);
+      cap.innerHTML=`<b>${String(h).padStart(2,"0")} h</b> · ${lvlName(x.score)} · ${fm(x.face)} m · ${Math.round(x.ws)} km/h ${ww[0]}`};
+    const leave=()=>{hNow=null;cap.innerHTML=orig};
+    bar.addEventListener("pointermove",move);bar.addEventListener("pointerdown",move);bar.addEventListener("pointerleave",leave);bar.addEventListener("pointercancel",leave);bar.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")setTimeout(leave,1200)})});
   document.querySelectorAll(".wk-r[data-d]").forEach(r=>{r.onclick=()=>go(+r.dataset.d,r.dataset.k);r.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();r.click()}}});
 }
+
+/* ——— textura: un "tak" leve al cambiar de hora o elegir un puntaje ——— */
+const haptic=(()=>{let sw=null,last=0;
+  return ()=>{const t=performance.now();if(t-last<35) return;last=t;
+    try{if(navigator.vibrate){navigator.vibrate(6);return}
+      if(!sw){sw=document.createElement("label");sw.setAttribute("aria-hidden","true");sw.style.cssText="position:fixed;left:-99px;width:1px;height:1px;overflow:hidden;opacity:0";
+        const i=document.createElement("input");i.type="checkbox";i.setAttribute("switch","");i.tabIndex=-1;sw.appendChild(i);document.body.appendChild(sw)}
+      sw.click()}catch(_){}}})();
 
 /* ——— 3 · detalle ——— */
 function chart(key,d){
@@ -548,7 +563,7 @@ function chartMove(e){const c=e.currentTarget,svg=c.querySelector("svg"),tip=c.q
   const h=Math.round(clamp(h0+(p.x-x0)/(x1-x0)*(h1-h0),h0,h1)),k=c.dataset.k,d=+c.dataset.d,i=d*24+h,X=x0+(h-h0)/(h1-h0)*(x1-x0);
   const [a,b]=c.dataset.l1.split(",").map(Number),y=b-(DATA.spots[k].sh[i]||0)/(+c.dataset.max)*(b-a);
   const gl=svg.querySelector(".guide"),gd=svg.querySelector(".gdot");gl.setAttribute("x1",X);gl.setAttribute("x2",X);gl.setAttribute("opacity",".35");gd.setAttribute("cx",X);gd.setAttribute("cy",y);gd.setAttribute("opacity","1");
-  if(tip.dataset.i!=i){tip.innerHTML=tipHTML(k,i);tip.dataset.i=i}
+  if(tip.dataset.i!=i){if(tip.dataset.i)haptic();tip.innerHTML=tipHTML(k,i);tip.dataset.i=i}
   tip.hidden=false;const r=c.getBoundingClientRect(),px=(X/svg.viewBox.baseVal.width)*r.width,tw=tip.offsetWidth;
   tip.style.left=Math.round(clamp(px+14+tw>r.width?px-14-tw:px+14,0,Math.max(0,r.width-tw)))+"px";}
 function chartLeave(e){const c=e.currentTarget;c.querySelector(".tip").hidden=true;c.querySelectorAll(".guide,.gdot").forEach(el=>el.setAttribute("opacity","0"))}
