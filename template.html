@@ -239,16 +239,10 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);paddin
 const DATA = __DATA__;
 const SPOTS = {
   mat:{name:"Matanzas",cam:{url:"https://misolas.com/cameras/111001",by:"Misolas",note:"de pago"},face:290,k:0.85,lo:0.9,hi:2.0,min:0.45,max:3.0,tidePref:0.15,orient:"O–ONO (Mar Blanco)",subs:"Mar Blanco · la punta · beach break",
-    style:"Mejor temprano: el SO entra fuerte después del mediodía.",
-    tideNote:"Mejor con marea media.",
     links:[["Wisuki","https://es.wisuki.com/forecast/4253/matanzas"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/matanzas/matanzas-1800"],["Breakfinder","https://breakfinder.surf/en/surf_spots/matanzas"],["Windguru","https://www.windguru.cz/42511"],["Surf-forecast","https://www.surf-forecast.com/breaks/Matanzas/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/matanzas/5842041f4e65fad6a7708cc3"]]},
   pue:{name:"Puertecillo",cam:{url:"https://misolas.com/cameras/802657",by:"Misolas",note:"de pago"},face:310,k:0.95,lo:0.9,hi:2.3,min:0.5,max:3.2,tidePref:0.0,orient:"N en la punta, O en la playa",subs:"La punta · Tumán",
-    style:"Necesita tamaño para conectar. Aguanta el S mejor que Matanzas; el norte la arruina.",
-    tideNote:"Baja a media subiendo.",
-    links:[["Wisuki","https://es.wisuki.com/forecast/6652/puertecillo"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/litueche/puertecillo-1807"],["Swellnet","https://www.swellnet.com/forecasts/chile/o-higgins/puertecillo"],["Breakfinder","https://breakfinder.surf/en/surf_spots/puertecillo"],["Surf-forecast","https://www.surf-forecast.com/breaks/Puertecillo/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/puertecillo/5842041f4e65fad6a7708cc0"]]},
-  top:{name:"Topocalma",face:320,k:1.0,lo:1.3,hi:3.5,min:0.8,max:5.0,tidePref:0.3,orient:"NO (Piedra del Viento) a N (El Secreto)",subs:"Punta · Piedra del Viento · El Secreto",
-    style:"La que recibe más tamaño. Pesada sobre roca; con S, El Secreto es el más protegido. Tiene menos fuentes de ola que los otros dos: su pronóstico es menos firme.",
-    tideNote:"Media a alta; en baja se pone peligrosa.",
+    links:[["Wisuki","https://es.wisuki.com/forecast/6652/puertecillo"],["Lineup","https://lineup.surf/es/spots/chile/o-higgins/litueche/puertecillo-1807"],["Swellnet","https://www.swellnet.com/forecasts/chile/o-higgins/puertecillo"],["Windguru (Topocalma)","https://www.windguru.cz/42514"],["Breakfinder","https://breakfinder.surf/en/surf_spots/puertecillo"],["Surf-forecast","https://www.surf-forecast.com/breaks/Puertecillo/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/puertecillo/5842041f4e65fad6a7708cc0"]]},
+  top:{name:"Topocalma",srcNote:"Tiene menos fuentes de ola que los otros dos: su pronóstico es menos firme.",face:320,k:1.0,lo:1.3,hi:3.5,min:0.8,max:5.0,tidePref:0.3,orient:"NO (Piedra del Viento) a N (El Secreto)",subs:"Punta · Piedra del Viento · El Secreto",
     links:[["Lineup · Piedra del Viento","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/piedra-del-viento-11050"],["Lineup · El Secreto","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/el-secreto-11051"],["Windguru","https://www.windguru.cz/42514"],["Surf-forecast","https://www.surf-forecast.com/breaks/Punta-Topocalma/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/punta-topocalma/640a4d5c4519054c85a024bd"]]}
 };
 const KEYS=["top","pue","mat"];   // de izquierda a derecha mirando al mar: Topocalma, Puertecillo, Matanzas
@@ -581,7 +575,7 @@ function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if
   c.addEventListener("pointerleave",e=>{if(!c.hasPointerCapture||!c.hasPointerCapture(e.pointerId))chartLeave(e)});
   c.addEventListener("dragstart",e=>e.preventDefault());c.addEventListener("selectstart",e=>e.preventDefault())})}
 const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span>línea azul: swell · flechas: hacia dónde va · gris de fondo: la marea · toca el gráfico para ver el viento</span></div>`;
-function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
+function more(k){const P=SPOTS[k];return `<details class="more"><summary>Fuentes de ${P.name}</summary>${P.srcNote?`<p>${P.srcNote}</p>`:""}<div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
   return `<span class="nw">${sarrow(x.sd)}${mr(x.face)}</span> · ${Math.round(x.teff)} s · <span class="nw">${arrow(x.wd,windWord(x.ws,x.wd,k)[1])}${Math.round(x.ws)} km/h</span> · ${hhmm(a.best.start)}`}
@@ -857,7 +851,7 @@ window.__svAnswer=answer;window.__svFix=t=>fixText(norm(t));
     const l=e.target.closest(".links a");if(l) ev(`fuente-${l.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-")}`,`Link a fuente: ${l.textContent.trim()}`)});
   document.addEventListener("toggle",e=>{const d=e.target;if(!d.open) return;
     if(d.classList.contains("why")) ev("por-que","Abrió Por qué esta recomendación");
-    else if(d.classList.contains("more")) ev("claves","Abrió Claves del spot");
+    else if(d.classList.contains("more")) ev("fuentes-spot","Abrió Fuentes del spot");
     else if(d.closest(".others")){const n=d.querySelector("summary strong");ev(`otro-spot-${(n?n.textContent:"").toLowerCase()}`,`Abrió otro spot: ${n?n.textContent:""}`)}},true);
   document.addEventListener("pointerdown",e=>{if(e.target.closest(".chart")) evOnce("grafico","Usó el gráfico");else if(e.target.closest(".srow")) evOnce("fuentes","Tocó el gráfico de fuentes")},true);
 })();
