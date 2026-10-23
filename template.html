@@ -180,7 +180,7 @@ details.more p{margin:8px 0 0;font-size:13.5px;max-width:62ch}
 .warn{border-left:3px solid var(--amber);background:var(--panel);padding:10px 12px;font-size:13px}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);padding-top:12px}
 /* ——— chat recomendador ——— */
-.ask{position:fixed;right:0;bottom:calc(24vh + env(safe-area-inset-bottom,0px));z-index:40;width:42px;height:46px;border:0;border-radius:12px 0 0 12px;background:var(--ink);color:var(--bg);font:700 22px/1 var(--f-head);box-shadow:-3px 4px 14px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 0 0 2px}
+.ask{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:40;width:38px;height:38px;border:0;border-radius:11px;background:var(--ink);color:var(--bg);font:700 19px/1 var(--f-head);box-shadow:0 4px 14px rgba(0,0,0,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:.92}
 .chat{position:fixed;z-index:50;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;border:1px solid var(--grid);box-shadow:0 -8px 30px rgba(0,0,0,.18);left:0;right:0;bottom:0;height:min(78vh,640px);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (min-width:900px){.chat{left:auto;top:0;height:100vh;width:400px;border-radius:0;box-shadow:-8px 0 30px rgba(0,0,0,.14)}}
 .chat[hidden],.ask[hidden]{display:none}
@@ -251,7 +251,7 @@ const SPOTS = {
     tideNote:"Media a alta; en baja se pone peligrosa.",
     links:[["Lineup · Piedra del Viento","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/piedra-del-viento-11050"],["Lineup · El Secreto","https://lineup.surf/es/spots/chile/o-higgins/litueche/topocalma/el-secreto-11051"],["Windguru","https://www.windguru.cz/42514"],["Surf-forecast","https://www.surf-forecast.com/breaks/Punta-Topocalma/forecasts/latest/six_day"],["Surfline","https://www.surfline.com/surf-report/punta-topocalma/640a4d5c4519054c85a024bd"]]}
 };
-const KEYS=["mat","pue","top"];
+const KEYS=["top","pue","mat"];   // de izquierda a derecha mirando al mar: Topocalma, Puertecillo, Matanzas
 const DIAS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"], DIAS_L=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
 const D0=DATA.start, OFF=DATA.tz_offset_s??-10800;   // primer día (YYYY-MM-DD) y offset de Chile en segundos
 const T0=Date.UTC(+D0.slice(0,4),+D0.slice(5,7)-1,+D0.slice(8,10))-OFF*1000; // 00:00 hora Chile de ese día
@@ -501,17 +501,14 @@ function renderMatrix(){
 
 /* ——— 3 · detalle ——— */
 function chart(key,d){
+  // solo la curva de la ola: el viento, la marea y la calidad por hora ya están en la tabla y en la semana (y en el globo)
   const S=DATA.spots[key],P=SPOTS[key],a=ANA[d][key],[sr,ss]=daylight(key,d);
   const W=540,x0=34,x1=W-8,h0=5,h1=21,X=h=>x0+(h-h0)/(h1-h0)*(x1-x0);
-  const L1=[38,98],L2=[112,158],L3=[174,204],H=222,idx=h=>d*24+h,rng=[];for(let h=h0;h<=h1;h++)rng.push(h);
+  const L1=[30,108],H=126,idx=h=>d*24+h,rng=[];for(let h=h0;h<=h1;h++)rng.push(h);
   const top=Math.max(1.5,...rng.map(h=>S.sh[idx(h)]||0)),step=top>3?1:.5,maxS=Math.ceil(top*1.15/step)*step,Y1=v=>L1[1]-v/maxS*(L1[1]-L1[0]);
   const lab=(x,y,t,anchor="start",c="var(--muted)")=>`<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="10" fill="${c}" font-family="IBM Plex Mono">${t}</text>`;
-  let g=`<rect x="${X(h0)}" y="0" width="${Math.max(0,X(sr)-X(h0))}" height="${L3[1]}" fill="var(--panel)"/><rect x="${X(ss)}" y="0" width="${Math.max(0,X(h1)-X(ss))}" height="${L3[1]}" fill="var(--panel)"/>`;
-  if(a) g+=`<rect x="${X(a.best.start)}" y="0" width="${X(a.best.end)-X(a.best.start)}" height="${L3[1]+3}" fill="var(--amber)" opacity=".3"/>`;
-  // franja de calidad hora a hora
-  const cw=(x1-x0)/(h1-h0);rng.forEach(h=>{if(h===h1) return;const L=lvl(hourly(key,idx(h)).score),night=h<Math.floor(sr)||h>=Math.ceil(ss);
-    g+=`<rect x="${X(h)+.5}" y="0" width="${cw-1}" height="7" rx="1.5" fill="var(--c${L})" opacity="${night?.25:1}"/>`});
-  // ola: eje de altura con líneas guía leves
+  let g=`<rect x="${X(h0)}" y="0" width="${Math.max(0,X(sr)-X(h0))}" height="${L1[1]}" fill="var(--panel)"/><rect x="${X(ss)}" y="0" width="${Math.max(0,X(h1)-X(ss))}" height="${L1[1]}" fill="var(--panel)"/>`;
+  if(a) g+=`<rect x="${X(a.best.start)}" y="0" width="${X(a.best.end)-X(a.best.start)}" height="${L1[1]}" fill="var(--amber)" opacity=".3"/>`;
   for(let v=step;v<=maxS+1e-6;v+=step){const y=Y1(v);
     g+=`<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`+lab(x0-5,y+3.5,fm(v).replace(",0","")+(v+step>maxS+1e-6?" m":""),"end")}
   g+=`<line x1="${x0}" x2="${x1}" y1="${L1[1]}" y2="${L1[1]}" stroke="var(--base)" stroke-width="1"/>`+lab(x0-5,L1[1]+3.5,"0","end");
@@ -519,29 +516,13 @@ function chart(key,d){
   if(minSw<maxS) g+=`<line x1="${x0}" x2="${x1}" y1="${Y1(minSw)}" y2="${Y1(minSw)}" stroke="var(--base)" stroke-dasharray="2 3"/>`+lab(x1,Y1(minSw)-3,"rompe desde aquí","end");
   g+=`<polyline points="${rng.map(h=>`${X(h)},${Y1(S.sh[idx(h)]||0)}`).join(" ")}" fill="none" stroke="var(--blue)" stroke-width="2.4" stroke-linejoin="round"/>`;
   if(a){const pk=a.peak.i%24;g+=`<circle cx="${X(pk)}" cy="${Y1(S.sh[idx(pk)])}" r="4" fill="var(--bg)" stroke="var(--blue)" stroke-width="2"/>`}
-  // dirección del swell: fila propia sobre el carril de la ola, separada del viento
   for(let h=h0+1;h<h1;h+=2){const sd=S.sd[idx(h)];if(sd==null) continue;
-    g+=`<g transform="translate(${X(h)},${L1[0]-14}) rotate(${(sd+180)%360})"><path d="M0 -5.5 L3.8 -0.5 L1.4 -0.5 L1.4 5.5 L-1.4 5.5 L-1.4 -0.5 L-3.8 -0.5 Z" fill="var(--blue)" opacity=".8"/></g>`}
-  // viento: flechas arriba y barras por color; número solo dentro de la ventana
-  g+=lab(x0,L2[0]-4,"viento");
-  const maxW=Math.max(30,...rng.map(h=>S.ws[idx(h)]||0)),bw=(x1-x0)/(h1-h0)*.6;
-  rng.forEach(h=>{if(h===h1) return;const ws=S.ws[idx(h)]||0,wd=S.wd[idx(h)]||0,c=windWord(ws,wd,key)[1],col=c==="w-good"?"var(--ok)":c==="w-bad"?"var(--maral)":"var(--muted)";
-    g+=`<g transform="translate(${X(h)},${L2[0]+6}) rotate(${(wd+180)%360})"><path d="M0 -5.5 L4 5 L0 2.6 L-4 5 Z" fill="${col}"/></g>`});
-  rng.forEach(h=>{const ws=S.ws[idx(h)]||0,c=windWord(ws,S.wd[idx(h)]||0,key)[1],col=c==="w-good"?"var(--ok)":c==="w-bad"?"var(--maral)":"var(--base)",hh=Math.max(1.5,ws/maxW*(L2[1]-L2[0]-22));
-    g+=`<rect x="${X(h)-bw/2}" y="${L2[1]-hh}" width="${bw}" height="${hh}" fill="${col}"/>`;
-    if(a&&h>=a.best.start&&h<a.best.end) g+=lab(X(h),L2[1]-hh-3,Math.round(ws),"middle","var(--ink)")});
-  // marea
-  const tv=rng.map(h=>S.tide[idx(h)]).filter(v=>v!=null),tmin=Math.min(...tv,-.5),tmax=Math.max(...tv,.7),Y3=v=>L3[1]-(v-tmin)/(tmax-tmin)*(L3[1]-L3[0]);
-  g+=lab(x0,L3[0]-4,"marea");
-  g+=`<polyline points="${rng.map(h=>`${X(h)},${Y3(S.tide[idx(h)]??0)}`).join(" ")}" fill="none" stroke="var(--base)" stroke-width="1.4"/>`;
-  tidesOn(key,d).filter(t=>t.h>=h0+.5&&t.h<=h1-.5).forEach(t=>g+=lab(X(t.h),t.type==="alta"?Y3(t.ht)-4:Y3(t.ht)+12,`${t.type==="alta"?"alta":"baja"} ${hhmm(t.h)}`,"middle","var(--ink)"));
+    g+=`<g transform="translate(${X(h)},${L1[0]-16}) rotate(${(sd+180)%360})"><path d="M0 -5.5 L3.8 -0.5 L1.4 -0.5 L1.4 5.5 L-1.4 5.5 L-1.4 -0.5 L-3.8 -0.5 Z" fill="var(--blue)" opacity=".8"/></g>`}
   for(let h=6;h<=21;h+=3) g+=lab(X(h),H-3,h+"h","middle","var(--ink)");
-  // ahora: punto que late sobre la ola, solo si el gráfico es de hoy (se mueve con el reloj)
-  g+=`<g class="nowg" pointer-events="none">${nowMark(key,d,X,Y1,L1,L3)}</g>`;
-  // guía y zona sensible para el globo de datos
-  g+=`<line class="guide" x1="0" x2="0" y1="0" y2="${L3[1]}" stroke="var(--ink)" stroke-width="1" opacity="0"/><circle class="gdot" r="4" cx="0" cy="0" fill="var(--blue)" stroke="var(--bg)" stroke-width="2" opacity="0"/>`;
+  g+=`<g class="nowg" pointer-events="none">${nowMark(key,d,X,Y1,L1,[L1[1],L1[1]])}</g>`;
+  g+=`<line class="guide" x1="0" x2="0" y1="0" y2="${L1[1]}" stroke="var(--ink)" stroke-width="1" opacity="0"/><circle class="gdot" r="4" cx="0" cy="0" fill="var(--blue)" stroke="var(--bg)" stroke-width="2" opacity="0"/>`;
   g+=`<rect class="hit" x="${x0}" y="0" width="${x1-x0}" height="${H}" fill="transparent"/>`;
-  return `<div class="chart" data-k="${key}" data-d="${d}" data-x0="${x0}" data-x1="${x1}" data-h0="${h0}" data-h1="${h1}" data-max="${maxS}" data-l1="${L1.join(",")}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ola, viento y marea por hora en ${P.name}">${g}</svg><div class="tip" hidden></div></div>`;
+  return `<div class="chart" data-k="${key}" data-d="${d}" data-x0="${x0}" data-x1="${x1}" data-h0="${h0}" data-h1="${h1}" data-max="${maxS}" data-l1="${L1.join(",")}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Swell por hora en ${P.name}">${g}</svg><div class="tip" hidden></div></div>`;
 }
 function nowMark(key,d,X,Y1,L1,L3){
   const h=(Date.now()-T0)/36e5-d*24;if(h<5||h>21) return "";
@@ -550,7 +531,7 @@ function nowMark(key,d,X,Y1,L1,L3){
     `<circle class="nowp" cx="${x}" cy="${y}" r="5" fill="var(--ink)"/><circle cx="${x}" cy="${y}" r="4" fill="var(--ink)" stroke="var(--bg)" stroke-width="1.5"/>`}
 function refreshNow(){document.querySelectorAll(".chart").forEach(c=>{const k=c.dataset.k,d=+c.dataset.d,g=c.querySelector(".nowg");if(!g) return;
   const x0=+c.dataset.x0,x1=+c.dataset.x1,h0=+c.dataset.h0,h1=+c.dataset.h1,[a,b]=c.dataset.l1.split(",").map(Number),mx=+c.dataset.max;
-  g.innerHTML=nowMark(k,d,h=>x0+(h-h0)/(h1-h0)*(x1-x0),v=>b-v/mx*(b-a),[a,b],[174,204])})}
+  g.innerHTML=nowMark(k,d,h=>x0+(h-h0)/(h1-h0)*(x1-x0),v=>b-v/mx*(b-a),[a,b],[b,b])})}
 /* globo de datos al pasar el dedo o el mouse sobre el gráfico */
 function tipHTML(k,i){const x=hourly(k,i),ww=windWord(x.ws,x.wd,k),S=DATA.spots[k],tr=tideTrend(k,i);
   return `<div class="tip-h"><b>${hhmm(i%24)}</b><span class="lvl l${lvl(x.score)}">${lvlName(x.score)}</span></div>
@@ -578,7 +559,7 @@ function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if
   c.addEventListener("pointermove",chartMove);c.addEventListener("pointerdown",grab(chartMove));c.addEventListener("pointerup",release(chartLeave));
   c.addEventListener("pointerleave",e=>{if(!c.hasPointerCapture||!c.hasPointerCapture(e.pointerId))chartLeave(e)});
   c.addEventListener("dragstart",e=>e.preventDefault());c.addEventListener("selectstart",e=>e.preventDefault())})}
-const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span><i style="background:var(--ok)"></i>offshore</span><span><i style="background:var(--base)"></i>cross-shore</span><span><i style="background:var(--maral)"></i>onshore</span><span>flechas: hacia dónde van el swell (azul, arriba) y el viento</span></div>`;
+const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span>línea: altura del swell · flechas: hacia dónde va · toca el gráfico para ver viento y marea</span></div>`;
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
