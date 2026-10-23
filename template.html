@@ -502,17 +502,17 @@ function renderMatrix(){
       if(h===hNow) return;if(hNow!==null)haptic();hNow=h;const x=hourly(k,d*24+h),ww=windWord(x.ws,x.wd,k);
       cap.innerHTML=`<b>${String(h).padStart(2,"0")} h</b> · ${lvlName(x.score)} · ${fm(x.face)} m · ${Math.round(x.ws)} km/h ${ww[0]}`};
     const leave=()=>{hNow=null;cap.innerHTML=orig};
-    bar.addEventListener("pointermove",move);bar.addEventListener("pointerdown",move);bar.addEventListener("pointerleave",leave);bar.addEventListener("pointercancel",leave);bar.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")setTimeout(leave,1200)})});
+    bar.addEventListener("pointermove",move);bar.addEventListener("pointerdown",move);bar.addEventListener("pointerleave",leave);bar.addEventListener("pointercancel",leave);bar.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse"){haptic();setTimeout(leave,1200)}})});
   document.querySelectorAll(".wk-r[data-d]").forEach(r=>{r.onclick=()=>go(+r.dataset.d,r.dataset.k);r.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();r.click()}}});
 }
 
 /* ——— textura: un "tak" leve al cambiar de hora o elegir un puntaje ——— */
-const haptic=(()=>{let sw=null,last=0;
+const haptic=(()=>{let last=0;
   return ()=>{const t=performance.now();if(t-last<35) return;last=t;
-    try{if(navigator.vibrate){navigator.vibrate(6);return}
-      if(!sw){sw=document.createElement("label");sw.setAttribute("aria-hidden","true");sw.style.cssText="position:fixed;left:-99px;width:1px;height:1px;overflow:hidden;opacity:0";
-        const i=document.createElement("input");i.type="checkbox";i.setAttribute("switch","");i.tabIndex=-1;sw.appendChild(i);document.body.appendChild(sw)}
-      sw.click()}catch(_){}}})();
+    try{if(typeof navigator.vibrate==="function"&&navigator.vibrate(8)) return;
+      const lab=document.createElement("label");lab.setAttribute("aria-hidden","true");lab.style.display="none";
+      const i=document.createElement("input");i.type="checkbox";i.setAttribute("switch","");lab.appendChild(i);
+      document.head.appendChild(lab);lab.click();document.head.removeChild(lab)}catch(_){}}})();
 
 /* ——— 3 · detalle ——— */
 function chart(key,d){
@@ -524,6 +524,12 @@ function chart(key,d){
   const lab=(x,y,t,anchor="start",c="var(--muted)")=>`<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="10" fill="${c}" font-family="IBM Plex Mono">${t}</text>`;
   let g=`<rect x="${X(h0)}" y="0" width="${Math.max(0,X(sr)-X(h0))}" height="${L1[1]}" fill="var(--panel)"/><rect x="${X(ss)}" y="0" width="${Math.max(0,X(h1)-X(ss))}" height="${L1[1]}" fill="var(--panel)"/>`;
   if(a) g+=`<rect x="${X(a.best.start)}" y="0" width="${X(a.best.end)-X(a.best.start)}" height="${L1[1]}" fill="var(--amber)" opacity=".3"/>`;
+  // marea de fondo: la forma y la hora importan, no los metros (no comparte eje con el swell)
+  const tv=rng.map(h=>S.tide[idx(h)]).filter(v=>v!=null);
+  if(tv.length>1){const tmin=Math.min(...tv),tmax=Math.max(...tv),span=Math.max(tmax-tmin,.3),T=v=>L1[1]-6-(v-tmin)/span*(L1[1]-L1[0])*.42;
+    g+=`<path d="M${X(h0)} ${L1[1]} ${rng.map(h=>`L${X(h)} ${T(S.tide[idx(h)]??tmin)}`).join(" ")} L${X(h1)} ${L1[1]} Z" fill="var(--base)" opacity=".16"/>`;
+    g+=`<polyline points="${rng.map(h=>`${X(h)},${T(S.tide[idx(h)]??tmin)}`).join(" ")}" fill="none" stroke="var(--base)" stroke-width="1" opacity=".7"/>`;
+    tidesOn(key,d).filter(t=>t.h>=h0+.7&&t.h<=h1-.7).forEach(t=>{const x=X(t.h),y=T(t.ht);g+=`<circle cx="${x}" cy="${y}" r="2.2" fill="var(--muted)"/>`+lab(x,t.type==="alta"?y-5:Math.min(L1[1]-3,y+12),`${t.type} ${hhmm(t.h)}`,"middle","var(--muted)")})}
   for(let v=step;v<=maxS+1e-6;v+=step){const y=Y1(v);
     g+=`<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`+lab(x0-5,y+3.5,fm(v).replace(",0","")+(v+step>maxS+1e-6?" m":""),"end")}
   g+=`<line x1="${x0}" x2="${x1}" y1="${L1[1]}" y2="${L1[1]}" stroke="var(--base)" stroke-width="1"/>`+lab(x0-5,L1[1]+3.5,"0","end");
@@ -537,7 +543,7 @@ function chart(key,d){
   g+=`<g class="nowg" pointer-events="none">${nowMark(key,d,X,Y1,L1,[L1[1],L1[1]])}</g>`;
   g+=`<line class="guide" x1="0" x2="0" y1="0" y2="${L1[1]}" stroke="var(--ink)" stroke-width="1" opacity="0"/><circle class="gdot" r="4" cx="0" cy="0" fill="var(--blue)" stroke="var(--bg)" stroke-width="2" opacity="0"/>`;
   g+=`<rect class="hit" x="${x0}" y="0" width="${x1-x0}" height="${H}" fill="transparent"/>`;
-  return `<div class="chart" data-k="${key}" data-d="${d}" data-x0="${x0}" data-x1="${x1}" data-h0="${h0}" data-h1="${h1}" data-max="${maxS}" data-l1="${L1.join(",")}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Swell por hora en ${P.name}">${g}</svg><div class="tip" hidden></div></div>`;
+  return `<div class="chart" data-k="${key}" data-d="${d}" data-x0="${x0}" data-x1="${x1}" data-h0="${h0}" data-h1="${h1}" data-max="${maxS}" data-l1="${L1.join(",")}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Swell y marea por hora en ${P.name}">${g}</svg><div class="tip" hidden></div></div>`;
 }
 function nowMark(key,d,X,Y1,L1,L3){
   const h=(Date.now()-T0)/36e5-d*24;if(h<5||h>21) return "";
@@ -571,10 +577,10 @@ function grab(move){return e=>{if(e.pointerType==="mouse"){e.preventDefault();tr
 function release(leave){return e=>{const t=e.currentTarget;try{if(t.hasPointerCapture(e.pointerId)){t.releasePointerCapture(e.pointerId);
   const r=t.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)leave(e)}}catch(_){}}}
 function bindCharts(){document.querySelectorAll(".chart[data-k]").forEach(c=>{if(c.dataset.bound) return;c.dataset.bound=1;
-  c.addEventListener("pointermove",chartMove);c.addEventListener("pointerdown",grab(chartMove));c.addEventListener("pointerup",release(chartLeave));
+  c.addEventListener("pointermove",chartMove);c.addEventListener("pointerdown",grab(chartMove));c.addEventListener("pointerup",release(chartLeave));c.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")haptic()});
   c.addEventListener("pointerleave",e=>{if(!c.hasPointerCapture||!c.hasPointerCapture(e.pointerId))chartLeave(e)});
   c.addEventListener("dragstart",e=>e.preventDefault());c.addEventListener("selectstart",e=>e.preventDefault())})}
-const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span>línea: altura del swell · flechas: hacia dónde va · toca el gráfico para ver viento y marea</span></div>`;
+const legend=`<div class="scale" style="margin-top:0"><span><i style="background:var(--amber);opacity:.5"></i>ventana</span><span>línea azul: swell · flechas: hacia dónde va · gris de fondo: la marea · toca el gráfico para ver el viento</span></div>`;
 function more(k){const P=SPOTS[k];return `<details class="more"><summary>Claves de ${P.name}</summary><p>${P.style} ${P.tideNote}</p><div class="links">${P.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div></details>`}
 function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.face-m.face;
   const size=df<-.25?"más chico":df>.25?"más grande":"mismo tamaño";
