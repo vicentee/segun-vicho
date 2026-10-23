@@ -15,7 +15,7 @@ Reporte de surf para **Matanzas, Puertecillo y Topocalma** (VI Región, Chile). 
 
 ## Cómo calcula
 
-1. Trae modelos de oleaje (NOAA GFS-Wave, Météo-France, DWD GWAM) y de viento (ECMWF, NOAA GFS, DWD ICON, Météo-France, UK Met Office, Canadá GEM, Japón JMA) desde [Open-Meteo](https://open-meteo.com), más lo que se pueda leer de Wisuki, Surf-forecast, Breakfinder, Lineup y Surfline (`web.json`).
+1. Trae modelos de oleaje (NOAA GFS-Wave, Météo-France, DWD GWAM) y de viento (ECMWF, NOAA GFS, DWD ICON, Météo-France, UK Met Office, Canadá GEM, Japón JMA) desde [Open-Meteo](https://open-meteo.com), más Surf-forecast, Wisuki y los modelos regionales de Windguru (Zephr-HD 3 km y WRF 12 km), que en el viento cuentan doble (`web.json`).
 2. Por cada hora y variable calcula la mediana y la dispersión robusta (MAD), descarta lo que se aleja demasiado y usa la mediana de lo que queda.
 3. Guarda las corridas de las últimas 30 horas (`hist` dentro de `index.html`) para comparar el pronóstico actual con el anterior.
 4. Estima el tamaño en la rompiente y un puntaje por spot según tamaño, período, dirección del swell, viento respecto de la orientación de cada punta, mar de viento y marea.
@@ -24,14 +24,14 @@ Reporte de surf para **Matanzas, Puertecillo y Topocalma** (VI Región, Chile). 
 |---|---|
 | `build.py` | Trae los datos, corta outliers, calcula medianas y escribe `index.html` |
 | `template.html` | La página: diseño, puntaje y textos |
-| `scrape.py` | Lee Surf-forecast y Wisuki y escribe `web.json` |
+| `scrape.py` | Lee Surf-forecast, Wisuki y Windguru y escribe `web.json` |
 | `web.json` | Valores leídos de los sitios web en la última corrida |
 | `marca/` | Sistema del ícono (la roca de Matanzas): `icono.py` genera los SVG, `index.html` es la hoja de marca |
 | `icons/`, `manifest.webmanifest` | Íconos y datos para instalar la app en el celular |
 
 ## Actualización
 
-A las 00:15, 06:15, 12:15 y 18:15 (hora de Chile) la GitHub Action `actualizar.yml` lee Surf-forecast y Wisuki (`scrape.py` → `web.json`), trae los modelos de Open-Meteo y reconstruye `index.html` (`build.py`). También corre cada vez que cambia `template.html`, `build.py` o `scrape.py`. Si `web.json` tiene más de 36 horas, se ignora y la mediana usa solo los modelos.
+A las 00:15, 06:15, 12:15 y 18:15 (hora de Chile) la GitHub Action `actualizar.yml` lee Surf-forecast, Wisuki y el viento de Windguru (`scrape.py` → `web.json`), trae los modelos de Open-Meteo y reconstruye `index.html` (`build.py`). También corre cada vez que cambia `template.html`, `build.py` o `scrape.py`. Si `web.json` tiene más de 36 horas, se ignora y la mediana usa solo los modelos.
 
 ```bash
 python3 -I scrape.py web.json

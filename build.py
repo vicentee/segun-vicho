@@ -16,6 +16,8 @@ Método por hora y variable:
      Altura: piso 0,25 m / 22 %, tope 40 %. Período: piso 2,5 s, tope 30 %. Viento: piso 6 km/h / 30 %, tope 50 %.
   4. Mediana de lo que queda (si quedan ≥ 2). Direcciones: media circular de lo que queda a ≤ 45° (oleaje) / 60° (viento).
 
+Viento: los modelos regionales de Windguru (Zephr-HD 3 km, WRF 12 km) entran hora a hora y cuentan doble (WG_WEIGHT).
+
 Historial: antes de escribir, lee el index.html anterior y guarda en DATA.hist las corridas de las últimas 30 h
 (una cada ≥ 2 h, 72 horas de datos por spot) para que la página muestre cómo cambió el pronóstico.
 """
@@ -33,6 +35,7 @@ LABEL = {"ncep_gfswave025": "NOAA GFS-Wave", "meteofrance_wave": "Météo-France
          "ecmwf_ifs025": "ECMWF", "gfs_seamless": "NOAA GFS", "icon_seamless": "DWD ICON",
          "meteofrance_seamless": "Météo-France", "ukmo_seamless": "UK Met Office",
          "gem_seamless": "Canadá GEM", "jma_seamless": "Japón JMA"}
+WG_WEIGHT = 2               # Windguru (modelos regionales de alta resolución) cuenta doble en la mediana del viento
 TP_FROM_MEAN = 1.25          # período pico ≈ 1,25 × período medio cuando el modelo no entrega pico
 # (piso absoluto, piso relativo) para el corte de outliers
 FLOORS = {"sh": (0.25, 0.22), "tp": (2.5, 0.0), "ws": (6.0, 0.30), "wg": (8.0, 0.30), "h2": (0.20, 0.30), "p2": (2.5, 0.0), "ww": (0.15, 0.30)}
@@ -167,6 +170,10 @@ def build(web):
         out.setdefault("tz_offset_s", wx.get("utc_offset_seconds", -10800))
         out.setdefault("start", times[0][:10])
         webs = web.get(key, [])
+        # Windguru hora a hora: {modelo: {unix UTC: (ws, wd, wg)}}
+        off = wx.get("utc_offset_seconds", -10800)
+        wgs = {lab: {t: (v["ws"][j], v["wd"][j], v["wg"][j]) for j, t in enumerate(v["t"])}
+               for lab, v in (web.get("wg") or {}).get(key, {}).items()}
         H = {k: [] for k in ["sh", "sp", "sd", "h2", "p2", "d2", "ww", "ws", "wd", "wg", "shLo", "shHi", "wsLo", "wsHi", "nW", "nV"]}
         audit, srcSh, srcWs, cutSh, cutWs = {}, {}, {}, {}, {}
 
@@ -192,11 +199,14 @@ def build(web):
             p2, _, _ = robust([(LABEL[m], None if g(d, "secondary_swell_wave_period") is None else g(d, "secondary_swell_wave_period") * TP_FROM_MEAN) for m, d in wave.items()], "p2")
             d2 = circ_robust([(LABEL[m], g(d, "secondary_swell_wave_direction")) for m, d in wave.items()], 45)
             ww, _, _ = robust([(LABEL[m], g(d, "wind_wave_height")) for m, d in wave.items()], "ww")
-            # viento
-            wsv = [(LABEL[m], g(d, "wind_speed_10m")) for m, d in wind.items()] + [(w["src"], w.get("ws")) for w in ws_]
+            # viento (Windguru entra hora a hora y con más peso)
+            ts = int(datetime.datetime.strptime(times[i], "%Y-%m-%dT%H:%M").replace(tzinfo=datetime.timezone.utc).timestamp()) - off
+            wgh = [(lab, ser[ts]) for lab, ser in wgs.items() if ts in ser]
+            wsv = [(LABEL[m], g(d, "wind_speed_10m")) for m, d in wind.items()] + [(w["src"], w.get("ws")) for w in ws_] + [(lab, v[0]) for lab, v in wgh] * WG_WEIGHT
             ws, kw, cw = robust(wsv, "ws")
-            wd = circ_robust([(LABEL[m], g(d, "wind_direction_10m")) for m, d in wind.items()] + [(w["src"], w.get("wd")) for w in ws_], 60)
-            wg, _, _ = robust([(LABEL[m], g(d, "wind_gusts_10m")) for m, d in wind.items()], "wg")
+            wd = circ_robust([(LABEL[m], g(d, "wind_direction_10m")) for m, d in wind.items()] + [(w["src"], w.get("wd")) for w in ws_] + [(lab, v[1]) for lab, v in wgh] * WG_WEIGHT, 60)
+            wg, _, _ = robust([(LABEL[m], g(d, "wind_gusts_10m")) for m, d in wind.items()] + [(lab, v[2]) for lab, v in wgh] * WG_WEIGHT, "wg")
+            kw, cw = list(dict(kw).items()), list(dict(cw).items())     # sin repetir Windguru en conteos y rangos
             # auditoría y series por fuente
             for s, _ in ks + kt + kw:
                 audit.setdefault(day, {}).setdefault(s, [0, 0])[0] += 1
@@ -232,7 +242,7 @@ def build(web):
             tides=tides,
             audit={d: [{"src": s, "used": u, "cut": c} for s, (u, c) in sorted(v.items(), key=lambda x: -x[1][1])] for d, v in audit.items()},
             srcSh=srcSh, srcWs=srcWs, cutSh=cutSh, cutWs=cutWs,
-            models={"wave": [LABEL[m] for m in wave], "wind": [LABEL[m] for m in wind], "web": sorted({w["src"] for w in webs}), "failed": failed},
+            models={"wave": [LABEL[m] for m in wave], "wind": [LABEL[m] for m in wind], "web": sorted({w["src"] for w in webs} | set(wgs)), "failed": failed},
             sun={d: [a[11:], b[11:]] for d, a, b in zip(wx["daily"]["time"], wx["daily"]["sunrise"], wx["daily"]["sunset"])})
     return out
 
@@ -281,7 +291,7 @@ if __name__ == "__main__":
     web = json.load(open(webp)) if webp != "-" else {}
     # datos de sitios web viejos no suman: si web.json tiene más de 36 h (o no dice cuándo se leyó), se ignora
     upd = (web.get("_meta") or {}).get("updated_utc")
-    if not upd or (datetime.datetime.utcnow() - datetime.datetime.strptime(upd, "%Y-%m-%dT%H:%MZ")).total_seconds() > 36 * 3600:
+    if not upd or (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.datetime.strptime(upd, "%Y-%m-%dT%H:%MZ")).total_seconds() > 36 * 3600:
         print("web.json sin fecha o con más de 36 h: se usan solo los modelos")
         web = {}
     data = build(web)

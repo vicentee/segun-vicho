@@ -5,6 +5,7 @@ Uso:  python3 -I scrape.py web.json
 
 Fuentes (solo librería estándar, sin navegador):
   - Surf-forecast: tabla de 7 días, mañana / tarde / noche por día. Altura y período del swell, dirección, viento.
+  - Windguru: viento hora a hora de sus modelos regionales (Zephr-HD 3 km y WRF 12 km), con más peso en build.py.
   - Wisuki: tabla cada 3 h. Se promedia por franja (AM 06–11, PM 12–19, N 20–05). Usa GFS, así que suma poco
     sobre los modelos, pero el corte de outliers lo maneja.
 Si una fuente falla o cambia su HTML, se omite y el resto sigue. Si no se lee nada, web.json no se toca.
@@ -20,6 +21,10 @@ SOURCES = {
     "top": {"Surf-forecast": "https://www.surf-forecast.com/breaks/Punta-Topocalma/forecasts/latest/six_day"},
 }
 KN = 1.852
+# Windguru: sus modelos regionales de alta resolución para la costa central (los globales ya entran por Open-Meteo).
+# Puertecillo no tiene spot propio en Windguru: usa Topocalma, a 4,5 km.
+WG_SPOTS = {"mat": 42511, "pue": 42514, "top": 42514}
+WG_MODELS = {69: "Windguru Zephr-HD 3 km", 29: "Windguru WRF 12 km"}
 
 
 def fetch(url):
@@ -129,6 +134,38 @@ def parse_wisuki(html, today):
     return out
 
 
+def wg_api(params):
+    import urllib.parse
+    url = "https://www.windguru.cz/int/iapi.php?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Referer": "https://www.windguru.cz/"})
+    with urllib.request.urlopen(req, timeout=40) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def fetch_windguru(id_spot, now_ts):
+    """Viento hora a hora de los modelos regionales de Windguru: {modelo: {t: [unix UTC], ws: [km/h], wd: [°], wg: [km/h]}}."""
+    tab = wg_api({"q": "forecast_spot", "id_spot": id_spot})["tabs"][0]
+    out = {}
+    for m in tab["id_model_arr"]:
+        if m["id_model"] not in WG_MODELS:
+            continue
+        r = wg_api({"q": "forecast", "id_model": m["id_model"], "id_spot": id_spot, "rundef": m["rundef"],
+                    "initstr": m["initstr"], "WGCACHEABLE": 21600, "cachefix": m["cachefix"]})
+        f = r["fcst"]
+        if now_ts - f["initstamp"] > 72 * 3600:      # corrida de hace más de 3 días: no sirve
+            continue
+        t, ws, wd, wg = [], [], [], []
+        for j, h in enumerate(f["hours"]):
+            ts = f["initstamp"] + h * 3600
+            if ts < now_ts - 3 * 3600 or f["WINDSPD"][j] is None:
+                continue
+            t.append(ts); ws.append(round(f["WINDSPD"][j] * KN, 1))          # la API entrega nudos
+            wd.append((f.get("WINDDIR") or [None] * len(f["hours"]))[j]); wg.append(None if f["GUST"][j] is None else round(f["GUST"][j] * KN, 1))
+        if t:
+            out[WG_MODELS[m["id_model"]]] = {"t": t, "ws": ws, "wd": wd, "wg": wg}
+    return out
+
+
 def main(outp):
     today = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(hours=3)).date()
     web, log = {}, []
@@ -144,8 +181,19 @@ def main(outp):
             except Exception as e:
                 log.append(f"{key} {src}: FALLÓ ({e})")
         web[key] = rows
+    now_ts = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+    wg = {}
+    for key, sid in WG_SPOTS.items():
+        try:
+            wg[key] = fetch_windguru(sid, now_ts)
+            got = ", ".join(f"{k} ({len(v['t'])} h)" for k, v in wg[key].items()) or "sin modelos vigentes"
+            log.append(f"{key} Windguru: {got}")
+        except Exception as e:
+            log.append(f"{key} Windguru: FALLÓ ({e})")
+    if any(wg.values()):
+        web["wg"] = wg
     print("\n".join(log))
-    if not any(web.values()):
+    if not any(v for k, v in web.items() if k != "wg") and "wg" not in web:
         print("No se pudo leer ninguna fuente: web.json queda como estaba.")
         return
     web["_meta"] = {"updated_utc": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).strftime("%Y-%m-%dT%H:%MZ"), "log": log}
