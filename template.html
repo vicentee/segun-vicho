@@ -98,6 +98,15 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 @media (max-width:440px){.facts b{font-size:17px}}
 .facts span{font-size:12px;color:var(--muted)}
 .facts.f4{grid-template-columns:repeat(4,minmax(0,1fr))}
+/* 0 · ir directo a un spot */
+.jump{margin:0 0 20px}
+.jump .k{margin-bottom:6px}
+.jump-b{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.jump button{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;border:1px solid var(--grid);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 10px 10px;font:600 15px var(--f-head);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.jump button:hover{border-color:var(--muted)} .jump button.rec{box-shadow:inset 0 0 0 1px var(--ink);border-color:var(--ink)}
+.jump button small{font:400 12px var(--f-mono,monospace);color:var(--muted);white-space:nowrap}
+.jump button .lvl{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:380px){.jump button{padding:8px 8px 9px;font-size:14px}.jump button .lvl{font-size:11px;padding:2px 5px}}
 .facts.f4 div:nth-child(n){border-top:0;border-left:1px solid var(--grid);padding-left:12px}
 .facts.f4 div:first-child{border-left:0;padding-left:0}
 @media (max-width:440px){.facts.f4{grid-template-columns:repeat(2,minmax(0,1fr))}.facts.f4 div:nth-child(odd){border-left:0;padding-left:0}.facts.f4 div:nth-child(n+3){border-top:1px solid var(--grid)}}
@@ -133,7 +142,7 @@ header .clock i{width:6px;height:6px;border-radius:50%;background:var(--ok);disp
 .scale{display:flex;gap:4px 12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
 .scale i{width:12px;height:12px;border-radius:2px;display:inline-block;vertical-align:-2px;margin-right:4px}
 /* 3 · detalle */
-.day{display:flex;flex-direction:column;gap:12px}
+.day{display:flex;flex-direction:column;gap:12px;scroll-margin-top:12px}
 .day h3{font-family:var(--f-head);font-size:24px;font-weight:700;margin:0;line-height:1.05}
 .day .sum{font-size:14.5px;margin:0}
 .lvl{font-family:var(--f-head);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;white-space:nowrap}
@@ -217,6 +226,7 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--grid);paddin
 <div class="wrap">
   <header><h1 class="logo"><svg viewBox="0 0 140 56" width="140" height="56" role="img" aria-label="Según Vicho"><defs><linearGradient id="lgf" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".18" stop-color="#fff"/><stop offset=".82" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="lmf" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="56"><rect width="140" height="56" fill="url(#lgf)"/></mask></defs><path d="M14.00 42.00 L16.10 38.85 L20.30 36.75 L23.45 37.27 L25.55 33.60 L30.80 31.50 L32.90 28.35 L39.20 27.30 L42.35 24.15 L48.65 23.10 L53.90 21.00 L60.20 21.52 L64.40 19.95 L69.65 21.00 L72.80 23.10 L74.90 25.20 L75.95 31.50 L78.05 35.70 L80.15 34.65 L81.20 29.40 L82.25 23.62 L83.83 18.38 L85.92 14.70 L89.08 12.81 L92.23 13.44 L94.33 16.27 L95.90 21.00 L98.00 27.30 L100.10 33.60 L103.25 38.85 L107.45 42.00 Z" fill="var(--ink)" stroke="var(--ink)" stroke-width=".8" stroke-linejoin="round"/><g mask="url(#lmf)" fill="none" stroke="var(--blue)" stroke-linecap="round"><line x1="2" y1="42.8" x2="138" y2="42.8" stroke-width="1.6"/><line x1="16" y1="49" x2="72" y2="49" stroke-width="2.4" opacity=".6"/><line x1="58" y1="54" x2="118" y2="54" stroke-width="2.4" opacity=".32"/></g></svg></h1><div class="hd"><div class="t">Reporte de surf</div><div class="sub">Matanzas · Puertecillo · Topocalma</div><div class="meta" id="meta"></div></div></header>
   <div id="stale" class="warn" hidden></div>
+  <nav class="jump" id="jump" aria-label="Ir directo a un spot"></nav>
   <section class="verdict" id="verdict" aria-live="polite"></section>
   <section>
     <h2>La semana</h2>
@@ -455,7 +465,16 @@ function renderVerdict(){
     <div class="facts f4">${metrics4(x,b.key)}</div>
     <p class="expect"><b>Qué esperar:</b> ${(t=>t?t+" ":"")(dayTalk(b.key,d,x))}Olas ${sz[1]}, ${seaWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const s2=secondWindow(b.key,d,b);return s2?(s2.i%24<b.best.start?` También sirve más temprano, a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`):""})()}</p>
     ${changes(d,d===curDay?hNow+.5:0)}`;
+  renderJump(d,when,b.key,d===curDay?hNow+.5:0);
 }
+/* ——— 0 · ir directo: los tres spots arriba, para ver uno aunque no sea el recomendado ——— */
+function renderJump(d,when,rec,from){
+  const btn=k=>{const a=(from?analyse(k,d,from):null)||ANA[d][k],L=lvl(a.score),hh=h=>String(h).padStart(2,"0");
+    return `<button type="button" data-k="${k}" class="${k===rec&&L>=1?"rec":""}" aria-label="Ver ${SPOTS[k].name} ${when.toLowerCase()}: ${lvlName(a.score)}"><span>${SPOTS[k].name}</span><span class="lvl l${L}">${lvlName(a.score)}</span><small>${L>=1?`${hh(a.best.start)}–${hh(a.best.end)} h`:fm(a.best.a.face)+" m"}</small></button>`};
+  const el=document.getElementById("jump");
+  el.innerHTML=`<div class="k">${when} en cada spot · toca para ver el detalle</div><div class="jump-b">${KEYS.map(btn).join("")}</div>`;
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{haptic();selDay=d;selKey=b.dataset.k;renderMatrix();renderDay();
+    document.getElementById("day").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"start"})})}
 
 /* ——— 2 · semana ——— */
 let selDay=curDay, selKey=null;
@@ -847,6 +866,7 @@ window.__svAnswer=answer;window.__svFix=t=>fixText(norm(t));
   const rel=d=>d===curDay?"hoy":d===curDay+1?"manana":"d+"+(d-curDay);
   if(matchMedia("(display-mode: standalone)").matches||navigator.standalone) ev("app-instalada","Abierta desde la app instalada");
   document.addEventListener("click",e=>{const c=e.target.closest(".cell")||e.target.closest(".wk-r[data-d]");if(c){ev(`semana-${c.dataset.k}-${rel(+c.dataset.d)}`,`Semana: ${SPOTS[c.dataset.k].name}, ${rel(+c.dataset.d)}`);return}
+    const j=e.target.closest(".jump button");if(j){ev(`ir-${j.dataset.k}`,`Ir directo: ${SPOTS[j.dataset.k].name}`);return}
     const a=e.target.closest("a.cam");if(a){ev(`camara-${a.dataset.k}`,`Ver cámara: ${SPOTS[a.dataset.k].name}`);return}
     const l=e.target.closest(".links a");if(l) ev(`fuente-${l.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-")}`,`Link a fuente: ${l.textContent.trim()}`)});
   document.addEventListener("toggle",e=>{const d=e.target;if(!d.open) return;
