@@ -324,6 +324,12 @@ function tidesOn(key,d){return DATA.spots[key].tides.map(t=>({day:Math.floor(t.m
 /* ——— tiempo y análisis ——— */
 const nowIdx=(Date.now()-T0)/36e5, curDay=clamp(Math.floor(nowIdx/24),0,ND-1);
 const ANA=[];for(let d=0;d<ND;d++){ANA[d]={};KEYS.forEach(k=>ANA[d][k]=analyse(k,d))}
+/* hoy, todo el reporte habla de lo que queda del día: una hora cuenta si queda al menos media.
+   El día completo queda en .full para poder decir "lo mejor ya pasó". */
+const NOW_H=nowIdx-curDay*24, FROM_NOW=NOW_H-.5;
+let TODAY_LEFT=false;
+if(nowIdx>=0&&nowIdx<NH){const rem={};KEYS.forEach(k=>rem[k]=analyse(k,curDay,FROM_NOW));
+  if(KEYS.every(k=>rem[k]&&rem[k].hrs.length>=2)){TODAY_LEFT=true;KEYS.forEach(k=>{rem[k].full=ANA[curDay][k];ANA[curDay][k]=rem[k]})}}
 const bestOf=(d,from)=>{let b=null;KEYS.forEach(k=>{const a=from!=null?analyse(k,d,from):ANA[d][k];if(a&&(!b||a.score>b.score))b=a});return b};
 const G=new Date(Date.parse(DATA.generated_utc)+OFF*1000).toISOString().slice(0,16);
 /* reloj en vivo y antigüedad de los datos, en hora de Chile */
@@ -450,9 +456,9 @@ function doubt(k,a){if(!a) return "";const lvl3=v=>Math.min(3,lvl(v)),x=a.best.a
 /* ——— 1 · decidir ——— */
 let verdictDay=curDay, verdictKey=null;
 function renderVerdict(){
-  const hNow=nowIdx-curDay*24;let d=curDay,when="Hoy";
-  let b=nowIdx>=0&&nowIdx<NH?bestOf(curDay,hNow+.5):null;
-  if(!b||b.hrs.length<2){d=Math.min(curDay+1,ND-1);when=d===curDay+1?"Mañana":dLong(d);b=bestOf(d)}
+  let d=curDay,when="Hoy";
+  let b=TODAY_LEFT?bestOf(curDay):null;
+  if(!b){d=Math.min(curDay+1,ND-1);when=d===curDay+1?"Mañana":dLong(d);b=bestOf(d)}
   verdictDay=d;verdictKey=b.key;
   const x=b.best.a,L=lvl(b.score),P=SPOTS[b.key],sz=sizeWord(x.face),sp=spoilAt(b.key,d,b.best.end),cf=confidence(x);
   const st=[["No pasa","st-no"],["Igual sale","st-maybe"],["Bueno","st-maybe"],["Épico","st-go"],["Épico","st-go"]][L];
@@ -464,12 +470,12 @@ function renderVerdict(){
     ${L>=1?camBtn(b.key):""}
     <div class="facts f4">${metrics4(x,b.key)}</div>
     <p class="expect"><b>Qué esperar:</b> ${(t=>t?t+" ":"")(dayTalk(b.key,d,x))}Olas ${sz[1]}, ${seaWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const s2=secondWindow(b.key,d,b);return s2?(s2.i%24<b.best.start?` También sirve más temprano, a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`):""})()}</p>
-    ${changes(d,d===curDay?hNow+.5:0)}`;
-  renderJump(d,when,b.key,d===curDay?hNow+.5:0);
+    ${changes(d,d===curDay?FROM_NOW:0)}`;
+  renderJump(d,when,b.key);
 }
 /* ——— 0 · ir directo: los tres spots arriba, para ver uno aunque no sea el recomendado ——— */
-function renderJump(d,when,rec,from){
-  const btn=k=>{const a=(from?analyse(k,d,from):null)||ANA[d][k],L=lvl(a.score),hh=h=>String(h).padStart(2,"0");
+function renderJump(d,when,rec){
+  const btn=k=>{const a=ANA[d][k],L=lvl(a.score),hh=h=>String(h).padStart(2,"0");
     return `<button type="button" data-k="${k}" class="${k===rec&&L>=1?"rec":""}" aria-label="Ver ${SPOTS[k].name} ${when.toLowerCase()}: ${lvlName(a.score)}"><span>${SPOTS[k].name}</span><small><i class="l${L}"></i>${lvlName(a.score).toLowerCase()}${L>=1?` · ${hh(a.best.start)} h`:""}</small></button>`};
   const el=document.getElementById("jump");
   el.innerHTML=`<div class="k">${when} en cada spot · toca para ver el detalle</div><div class="jump-b">${KEYS.map(btn).join("")}</div>`;
@@ -601,16 +607,15 @@ function compare(k,main){const a=ANA[selDay][k],x=a.best.a,m=main.best.a,df=x.fa
 function renderDay(){
   const d=selDay,mainK=selKey||bestOf(d).key,a=ANA[d][mainK],P=SPOTS[mainK],x=a.best.a,sp=spoilAt(mainK,d,a.best.end);
   const sum=lvl(a.score)>=1?`${(t=>t?t+" ":"")(dayTalk(mainK,d,x))}${mr(x.face)}, ${seaWord(x)}, entre ${hhmm(a.best.start)} y ${hhmm(a.best.end)}.${sp!=null?` El viento lo ensucia desde las ${hhmm(sp)}.`:" Aguanta limpio el resto del día."}`:`No pasa. Lo más decente es a las ${hhmm(a.best.start)} (${mr(x.face)}).`;
-  // hoy: si la mejor ventana ya pasó, decir qué queda (coherente con el veredicto)
-  const hNow=nowIdx-d*24,rest=d===curDay&&lvl(a.score)>=1&&a.best.end<=hNow?analyse(mainK,d,hNow+.5):null;
-  const passed=d===curDay&&lvl(a.score)>=1&&a.best.end<=hNow?` Esa ventana ya pasó${rest&&rest.hrs.length>=2&&lvl(rest.score)>=1?`; lo que queda: <b>${hhmm(rest.best.start)}–${hhmm(rest.best.end)}</b> (${lvlName(rest.score).toLowerCase()})`:""}.`:"";
+  // hoy: todo es lo que queda del día; si lo mejor fue más temprano, una línea para decirlo
+  const F=a.full,passed=F&&lvl(F.score)>=1&&F.best.start<a.best.start&&F.score-a.score>=.3?`<p class="aside" style="margin:0">Lo mejor de hoy fue ${hhmm(F.best.start)}–${hhmm(F.best.end)} (${lvlName(F.score).toLowerCase()}); ya pasó.</p>`:"";
   const others=KEYS.filter(k=>k!==mainK).sort((p,q)=>ANA[d][q].score-ANA[d][p].score);
   const trendNote=TREND(d)?`<p class="warn" style="margin:0">Tendencia: a esta distancia quedan 1–2 modelos de ola y 3–4 de viento. Sirve para ver si viene swell y de qué tamaño, no para elegir la hora.</p>`:"";
   document.getElementById("day").innerHTML=trendNote+`
     <div class="k">${dLong(d)} ${dNum(d)}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>${P.name}</h3><span class="lvl l${lvl(a.score)}">${lvlName(a.score)}</span></div>
     ${d===curDay?camBtn(mainK):""}
-    <p class="sum">${sum}${passed}</p>
+    <p class="sum">${sum}</p>${passed}
     ${!TREND(d)?doubt(mainK,a):""}
     ${chart(mainK,d)}${legend}
     ${hourGrid(mainK,d,a)}
@@ -789,7 +794,7 @@ function boardAnswer(o){
   const miss=[];if(!P.h)miss.push("estatura");if(!P.w)miss.push("peso");if(!P.lv)miss.push("nivel");
   if(miss.length) return {html:`<p>Para darte medidas necesito tu ${miss.join(", ").replace(/, ([^,]*)$/," y $1")}.</p><p class="muted">Ejemplo: "mido 1,75, peso 78 kg, nivel medio, uso longboard".</p>`,chips:P.lv?[]:["Soy principiante","Nivel medio","Soy avanzado"]};
   let d=o.d!=null?o.d:verdictDay,a=o.spot?ANA[d][o.spot]:bestOf(d);
-  if(d===curDay){const f=nowIdx-curDay*24+.5,rem=o.spot?analyse(o.spot,d,f):bestOf(d,f);   // hoy: solo lo que queda del día
+  if(d===curDay){const f=FROM_NOW,rem=o.spot?analyse(o.spot,d,f):bestOf(d,f);   // hoy: solo lo que queda del día
     if(rem&&rem.hrs.length>=2&&(lvl(rem.score)>=1||o.d!=null)) a=rem; else if(o.d==null&&curDay+1<ND){d=curDay+1;a=o.spot?ANA[d][o.spot]:bestOf(d)}}
   const k=a.key,x=a.best.a,r=boardFor(P,x,k);
   let h=`<p>Para <b>${day(d)}</b> en ${SPOTS[k].name} (${mr(x.face)}, ${Math.round(x.teff)} s, ${kjFmt(x.kj)} kJ, ${hhmm(a.best.start)}–${hhmm(a.best.end)}):</p>
