@@ -36,6 +36,10 @@ header .meta{font-size:11px;color:var(--muted);font-family:var(--f-mono);margin-
 header .upd{white-space:nowrap}
 .cam{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;align-self:flex-start;color:var(--ink);text-decoration:none;font-weight:600;font-size:14px;border:1.5px solid var(--ink);border-radius:999px;padding:6px 14px 6px 12px}
 .cam small{font-weight:400;color:var(--muted);font-size:12px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.share{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:var(--ink);background:none;font:600 14px var(--f-body);border:1.5px solid var(--grid);border-radius:999px;padding:6px 14px 6px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.share:hover{border-color:var(--muted)}
+@media (max-width:389px){.share{padding:6px 11px}.share span{display:none}.share.done span{display:inline}}
 .cam:hover{background:var(--panel)} .cam:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .pwm{display:block;margin:4px 0 2px;max-width:100%}
 .hg .pwm{margin:4px auto 0}
@@ -467,12 +471,21 @@ function renderVerdict(){
     <span class="status ${st[1]}">${st[0]}</span>
     <h2 class="line">${line}</h2>
     ${doubt(b.key,b)}
-    ${L>=1?camBtn(b.key):""}
+    <div class="acts">${L>=1?camBtn(b.key):""}<button type="button" class="share" id="share" aria-label="Compartir el reporte"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 10.5V2M4.8 5.2 8 2l3.2 3.2M3 8.5V13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Compartir</span></button></div>
     <div class="facts f4">${metrics4(x,b.key)}</div>
     <p class="expect"><b>Qué esperar:</b> ${(t=>t?t+" ":"")(dayTalk(b.key,d,x))}Olas ${sz[1]}, ${seaWord(x)}, ${periodWord(x.teff)}, ${tideTrend(b.key,x.i)}.${sp!=null?` El viento lo ensucia desde las <b>${hhmm(sp)}</b>.`:" Aguanta limpio el resto del día."} ${(()=>{const s2=secondWindow(b.key,d,b);return s2?(s2.i%24<b.best.start?` También sirve más temprano, a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`:` Si no alcanzas, hay una segunda opción a las <b>${hhmm(s2.i%24)}</b> (${lvlName(s2.score)}).`):""})()}</p>
     ${changes(d,d===curDay?FROM_NOW:0)}`;
   renderJump(d,when,b.key);
+  SHARE_TXT=L>=1?`${when}: ${P.name}, ${hhmm(b.best.start)}–${hhmm(b.best.end)} (${lvlName(b.score).toLowerCase()}).`:`${when}: no pasa en ninguno de los tres.`;
+  document.getElementById("share").onclick=shareReport;
 }
+/* compartir: hoja nativa del celular; si no hay, copia el link */
+let SHARE_TXT="";const SHARE_URL="https://vicentee.github.io/segun-vicho/";
+async function shareReport(e){const btn=e.currentTarget,lab=btn.querySelector("span");haptic();
+  const data={title:"Según Vicho · Reporte de surf",text:`Según Vicho. ${SHARE_TXT}`,url:SHARE_URL};
+  if(navigator.share){try{await navigator.share(data)}catch(_){}return}
+  try{await navigator.clipboard.writeText(`${data.text} ${SHARE_URL}`);lab.textContent="Link copiado";btn.classList.add("done");setTimeout(()=>{lab.textContent="Compartir";btn.classList.remove("done")},2000)}
+  catch(_){lab.textContent="vicentee.github.io/segun-vicho";btn.classList.add("done")}}
 /* ——— 0 · ir directo: los tres spots arriba, para ver uno aunque no sea el recomendado ——— */
 function renderJump(d,when,rec){
   const btn=k=>{const a=ANA[d][k],L=lvl(a.score),hh=h=>String(h).padStart(2,"0");
@@ -872,6 +885,7 @@ window.__svAnswer=answer;window.__svFix=t=>fixText(norm(t));
   if(matchMedia("(display-mode: standalone)").matches||navigator.standalone) ev("app-instalada","Abierta desde la app instalada");
   document.addEventListener("click",e=>{const c=e.target.closest(".cell")||e.target.closest(".wk-r[data-d]");if(c){ev(`semana-${c.dataset.k}-${rel(+c.dataset.d)}`,`Semana: ${SPOTS[c.dataset.k].name}, ${rel(+c.dataset.d)}`);return}
     const j=e.target.closest(".jump button");if(j){ev(`ir-${j.dataset.k}`,`Ir directo: ${SPOTS[j.dataset.k].name}`);return}
+    if(e.target.closest("#share")){ev("compartir","Compartir");return}
     const a=e.target.closest("a.cam");if(a){ev(`camara-${a.dataset.k}`,`Ver cámara: ${SPOTS[a.dataset.k].name}`);return}
     const l=e.target.closest(".links a");if(l) ev(`fuente-${l.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-")}`,`Link a fuente: ${l.textContent.trim()}`)});
   document.addEventListener("toggle",e=>{const d=e.target;if(!d.open) return;
